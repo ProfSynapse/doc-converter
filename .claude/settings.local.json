@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(.git /mnt/c/Users/Joseph/Documents/Code/md-converter/)"
+      "Bash(.git /mnt/c/Users/Joseph/Documents/Code/md-converter/)",
+      "Bash(pip3 install:*)",
+      "Bash(python3:*)",
+      "Bash(curl:*)",
+      "Bash(dd:*)",
+      "Bash(pkill:*)",
+      "Bash(FLASK_ENV=development python3:*)",
+      "WebFetch(domain:picoshare-production-7223.up.railway.app)"
     ],
     "deny": [],
     "ask": []

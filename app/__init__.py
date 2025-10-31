@@ -25,7 +25,7 @@ def create_app(config_name='default'):
         Configured Flask application instance
     """
     # Create Flask app with correct static folder
-    app = Flask(__name__, static_folder='../static')
+    app = Flask(__name__, static_folder='static')
 
     # Load configuration
     from app.config import config
