@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.git /mnt/c/Users/Joseph/Documents/Code/md-converter/)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

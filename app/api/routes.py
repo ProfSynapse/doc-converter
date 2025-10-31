@@ -1,0 +1,368 @@
+"""
+API Routes
+Location: /mnt/c/Users/Joseph/Documents/Code/md-converter/app/api/routes.py
+
+This module defines the API endpoints for the markdown converter service:
+- POST /api/convert - Convert markdown to document formats
+- GET /api/download/<job_id>/<format> - Download converted files
+
+Dependencies:
+    - app/api/validators: Request validation
+    - app/converters/markdown_converter: Conversion logic
+    - app/utils/file_handler: File management
+    - app/utils/helpers: Response formatting
+
+Used by: app/__init__.py via blueprint registration
+"""
+from flask import request, jsonify, send_file, current_app
+from werkzeug.utils import secure_filename
+from pathlib import Path
+from datetime import datetime
+import logging
+import os
+
+from app.api import api_blueprint
+from app.api.validators import validate_upload, validate_job_id, validate_content_encoding, validate_markdown_content
+from app.converters import MarkdownConverter
+from app.utils.file_handler import (
+    generate_job_id,
+    get_job_directory,
+    get_file_path,
+    get_file_info,
+    is_job_expired,
+    cleanup_old_files
+)
+from app.utils.helpers import (
+    format_error_response,
+    get_mime_type,
+    calculate_processing_time,
+    format_file_size
+)
+from app.utils.security import sanitize_filename
+
+
+logger = logging.getLogger(__name__)
+
+
+@api_blueprint.route('/convert', methods=['POST'])
+def convert():
+    """
+    Convert markdown file to document format(s).
+
+    Accepts:
+        - multipart/form-data with 'file' field (markdown file)
+        - form parameter 'format': 'docx', 'pdf', or 'both' (default: 'both')
+
+    Returns:
+        - If format='both': JSON with download URLs for both formats
+        - If format='docx' or 'pdf': Direct file download
+
+    Status Codes:
+        200: Success
+        400: Invalid request
+        413: File too large
+        415: Invalid file type
+        422: Invalid content
+        500: Conversion error
+    """
+    start_time = datetime.utcnow()
+
+    # Validate request
+    validation_error = validate_upload(request)
+    if validation_error:
+        return jsonify(validation_error), validation_error['status']
+
+    try:
+        # Extract file and parameters
+        file = request.files['file']
+        format_type = request.form.get('format', 'both').lower()
+        original_filename = secure_filename(file.filename)
+        base_name = Path(original_filename).stem
+
+        logger.info(f'Converting file: {original_filename} to format: {format_type}')
+
+        # Validate encoding
+        encoding_error = validate_content_encoding(file)
+        if encoding_error:
+            return jsonify(encoding_error), encoding_error['status']
+
+        # Read content
+        try:
+            content = file.read().decode('utf-8')
+        except UnicodeDecodeError:
+            error = format_error_response(
+                'INVALID_ENCODING',
+                'File must be UTF-8 encoded',
+                422
+            )
+            return jsonify(error), 422
+
+        # Validate content
+        content_error = validate_markdown_content(content)
+        if content_error:
+            return jsonify(content_error), content_error['status']
+
+        # Generate job ID and directory
+        job_id = generate_job_id()
+        job_dir = get_job_directory(job_id, str(current_app.config['CONVERTED_FOLDER']))
+
+        logger.info(f'Job ID: {job_id}, Directory: {job_dir}')
+
+        # Initialize converter
+        converter = MarkdownConverter()
+
+        # Perform conversion based on format
+        if format_type == 'both':
+            # Convert to both formats and return JSON with download URLs
+            try:
+                docx_path, pdf_path = converter.convert_to_both(
+                    content,
+                    base_name,
+                    job_dir
+                )
+
+                # Get file information
+                docx_info = get_file_info(docx_path)
+                pdf_info = get_file_info(pdf_path)
+
+                # Build response
+                processing_time = calculate_processing_time(start_time)
+
+                response = {
+                    'status': 'success',
+                    'job_id': job_id,
+                    'filename': base_name,
+                    'formats': {
+                        'docx': {
+                            'download_url': f'/api/download/{job_id}/docx',
+                            'filename': docx_info['filename'],
+                            'size': docx_info['size'],
+                            'size_formatted': format_file_size(docx_info['size']),
+                            'mimetype': get_mime_type('docx')
+                        },
+                        'pdf': {
+                            'download_url': f'/api/download/{job_id}/pdf',
+                            'filename': pdf_info['filename'],
+                            'size': pdf_info['size'],
+                            'size_formatted': format_file_size(pdf_info['size']),
+                            'mimetype': get_mime_type('pdf')
+                        }
+                    },
+                    'processing_time': round(processing_time, 2),
+                    'timestamp': datetime.utcnow().isoformat() + 'Z'
+                }
+
+                logger.info(f'Successfully converted {base_name} to both formats in {processing_time:.2f}s')
+                return jsonify(response), 200
+
+            except Exception as e:
+                logger.error(f'Conversion to both formats failed: {e}', exc_info=True)
+                error = format_error_response(
+                    'CONVERSION_ERROR',
+                    'Document conversion failed',
+                    500
+                )
+                return jsonify(error), 500
+
+        elif format_type in ['docx', 'pdf']:
+            # Convert to single format and return file directly
+            try:
+                output_path = os.path.join(job_dir, f'{base_name}.{format_type}')
+
+                if format_type == 'docx':
+                    converter.convert_to_docx(content, output_path)
+                else:  # pdf
+                    converter.convert_to_pdf(content, output_path)
+
+                processing_time = calculate_processing_time(start_time)
+                logger.info(f'Successfully converted {base_name} to {format_type.upper()} in {processing_time:.2f}s')
+
+                # Return file directly
+                return send_file(
+                    output_path,
+                    as_attachment=True,
+                    download_name=f'{base_name}.{format_type}',
+                    mimetype=get_mime_type(format_type)
+                )
+
+            except Exception as e:
+                logger.error(f'Conversion to {format_type.upper()} failed: {e}', exc_info=True)
+                error = format_error_response(
+                    'CONVERSION_ERROR',
+                    f'Failed to convert to {format_type.upper()}',
+                    500
+                )
+                return jsonify(error), 500
+
+        else:
+            # Invalid format (should be caught by validator but double-check)
+            error = format_error_response(
+                'INVALID_FORMAT',
+                'Invalid format specified',
+                400
+            )
+            return jsonify(error), 400
+
+    except Exception as e:
+        logger.error(f'Unexpected error during conversion: {e}', exc_info=True)
+        error = format_error_response(
+            'INTERNAL_ERROR',
+            'Internal server error during conversion',
+            500
+        )
+        return jsonify(error), 500
+
+
+@api_blueprint.route('/download/<job_id>/<format>', methods=['GET'])
+def download(job_id: str, format: str):
+    """
+    Download converted file.
+
+    Args:
+        job_id: Unique job identifier (UUID)
+        format: File format ('docx' or 'pdf')
+
+    Returns:
+        Binary file stream for download
+
+    Status Codes:
+        200: Success
+        400: Invalid parameters
+        404: File not found
+        410: File expired
+    """
+    logger.info(f'Download request: job_id={job_id}, format={format}')
+
+    # Validate job ID
+    job_id_error = validate_job_id(job_id)
+    if job_id_error:
+        return jsonify(job_id_error), job_id_error['status']
+
+    # Validate format
+    if format not in ['docx', 'pdf']:
+        error = format_error_response(
+            'INVALID_FORMAT',
+            f'Invalid format: {format}. Must be docx or pdf',
+            400,
+            {'allowed_formats': ['docx', 'pdf']}
+        )
+        return jsonify(error), 400
+
+    try:
+        base_dir = str(current_app.config['CONVERTED_FOLDER'])
+
+        # Check if job has expired
+        if is_job_expired(job_id, base_dir, max_age_hours=24):
+            logger.warning(f'Job expired: {job_id}')
+            error = format_error_response(
+                'FILE_EXPIRED',
+                'File has expired and been deleted',
+                410,
+                {
+                    'job_id': job_id,
+                    'expiration_policy': '24 hours'
+                }
+            )
+            return jsonify(error), 410
+
+        # Get file path
+        file_path = get_file_path(job_id, format, base_dir)
+
+        if not file_path or not os.path.exists(file_path):
+            logger.warning(f'File not found: job_id={job_id}, format={format}')
+            error = format_error_response(
+                'FILE_NOT_FOUND',
+                'Converted file not found',
+                404,
+                {
+                    'job_id': job_id,
+                    'format': format
+                }
+            )
+            return jsonify(error), 404
+
+        # Get file info for logging
+        file_info = get_file_info(file_path)
+        logger.info(f'Serving file: {file_info["filename"]} ({file_info["size"]} bytes)')
+
+        # Send file
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=file_info['filename'],
+            mimetype=get_mime_type(format)
+        )
+
+    except ValueError as e:
+        # Path traversal or other validation error
+        logger.error(f'Validation error: {e}')
+        error = format_error_response(
+            'INVALID_REQUEST',
+            str(e),
+            400
+        )
+        return jsonify(error), 400
+
+    except Exception as e:
+        logger.error(f'Unexpected error during download: {e}', exc_info=True)
+        error = format_error_response(
+            'INTERNAL_ERROR',
+            'Internal server error during download',
+            500
+        )
+        return jsonify(error), 500
+
+
+@api_blueprint.route('/cleanup', methods=['POST'])
+def cleanup():
+    """
+    Manually trigger cleanup of old files.
+
+    This endpoint is protected and should only be called by administrators
+    or scheduled tasks. In production, use a proper authentication mechanism.
+
+    Returns:
+        JSON with cleanup statistics
+    """
+    # TODO: Add authentication for this endpoint in production
+
+    try:
+        base_dir = str(current_app.config['CONVERTED_FOLDER'])
+        max_age_hours = current_app.config.get('CLEANUP_INTERVAL', 24 * 3600) // 3600
+
+        logger.info(f'Starting manual cleanup (max_age={max_age_hours}h)')
+
+        deleted_count = cleanup_old_files(base_dir, max_age_hours)
+
+        response = {
+            'status': 'success',
+            'message': f'Cleanup completed',
+            'deleted_directories': deleted_count,
+            'max_age_hours': max_age_hours,
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
+        }
+
+        logger.info(f'Cleanup completed: {deleted_count} directories deleted')
+        return jsonify(response), 200
+
+    except Exception as e:
+        logger.error(f'Cleanup failed: {e}', exc_info=True)
+        error = format_error_response(
+            'CLEANUP_ERROR',
+            'Cleanup operation failed',
+            500
+        )
+        return jsonify(error), 500
+
+
+@api_blueprint.errorhandler(413)
+def request_entity_too_large(error):
+    """Handle file too large errors"""
+    max_size = current_app.config.get('MAX_FILE_SIZE', 10 * 1024 * 1024)
+    error_response = format_error_response(
+        'FILE_TOO_LARGE',
+        f'File size exceeds maximum limit of {format_file_size(max_size)}',
+        413,
+        {'max_size': max_size}
+    )
+    return jsonify(error_response), 413

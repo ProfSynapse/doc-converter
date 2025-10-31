@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown to Word/PDF Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Markdown Converter</h1>
+            <p class="text-gray-600">Convert your Markdown files to Word or PDF with ease</p>
+        </header>
+
+        <main class="max-w-2xl mx-auto">
+            <!-- Upload Section -->
+            <div id="upload-section" class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                <h2 class="text-2xl font-semibold mb-4">Upload Markdown File</h2>
+
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition">
+                    <input type="file" id="file-input" accept=".md,.markdown,.txt" class="hidden">
+                    <label for="file-input" class="cursor-pointer">
+                        <div class="mb-4">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="text-lg text-gray-700 mb-2">Click to upload or drag and drop</p>
+                        <p class="text-sm text-gray-500">Markdown files (.md, .markdown, .txt) up to 10MB</p>
+                    </label>
+                </div>
+
+                <div id="file-info" class="mt-4 hidden">
+                    <p class="text-sm text-gray-600">Selected file: <span id="filename" class="font-medium"></span></p>
+                    <p class="text-sm text-gray-600">Size: <span id="filesize" class="font-medium"></span></p>
+                </div>
+
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Output Format</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="format" value="both" checked class="mr-2">
+                            <span>Both (Word & PDF)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="format" value="docx" class="mr-2">
+                            <span>Word Only</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="format" value="pdf" class="mr-2">
+                            <span>PDF Only</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button id="convert-btn" disabled class="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition">
+                    Convert
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="progress-section" class="bg-white rounded-lg shadow-lg p-8 mb-6 hidden">
+                <h2 class="text-2xl font-semibold mb-4">Converting...</h2>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-center mt-2 text-gray-600">Uploading file...</p>
+            </div>
+
+            <!-- Download Section -->
+            <div id="download-section" class="bg-white rounded-lg shadow-lg p-8 mb-6 hidden">
+                <h2 class="text-2xl font-semibold mb-4 text-green-600">Conversion Complete!</h2>
+                <p class="text-gray-600 mb-4">Your files are ready for download:</p>
+                <div id="download-links" class="space-y-3">
+                    <!-- Download links will be inserted here -->
+                </div>
+                <button id="reset-btn" class="mt-6 w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition">
+                    Convert Another File
+                </button>
+            </div>
+
+            <!-- Error Section -->
+            <div id="error-section" class="bg-white rounded-lg shadow-lg p-8 mb-6 hidden">
+                <h2 class="text-2xl font-semibold mb-4 text-red-600">Error</h2>
+                <p id="error-message" class="text-gray-700 mb-4"></p>
+                <button id="error-reset-btn" class="w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition">
+                    Try Again
+                </button>
+            </div>
+        </main>
+
+        <footer class="text-center mt-12 text-gray-500 text-sm">
+            <p>Markdown to Word/PDF Converter v1.0.0</p>
+            <p class="mt-2">Powered by Flask, Pandoc, and WeasyPrint</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple client-side JavaScript for the converter
+        const fileInput = document.getElementById('file-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const errorResetBtn = document.getElementById('error-reset-btn');
+        let selectedFile = null;
+
+        // File selection handler
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('filename').textContent = file.name;
+                document.getElementById('filesize').textContent = formatFileSize(file.size);
+                document.getElementById('file-info').classList.remove('hidden');
+                convertBtn.disabled = false;
+            }
+        });
+
+        // Convert button handler
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const format = document.querySelector('input[name="format"]:checked').value;
+
+            showSection('progress');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('format', format);
+
+                const response = await fetch('/api/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Conversion failed');
+                }
+
+                // Check if response is JSON or file
+                const contentType = response.headers.get('content-type');
+
+                if (contentType && contentType.includes('application/json')) {
+                    // Both formats - show download links
+                    const result = await response.json();
+                    showDownloadLinks(result);
+                } else {
+                    // Single format - trigger download
+                    const blob = await response.blob();
+                    const filename = selectedFile.name.replace(/\.[^/.]+$/, '') + '.' + format;
+                    downloadBlob(blob, filename);
+                    showSuccess('File downloaded successfully!');
+                }
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+
+        // Reset button handlers
+        resetBtn.addEventListener('click', reset);
+        errorResetBtn.addEventListener('click', reset);
+
+        function showSection(section) {
+            document.getElementById('upload-section').classList.add('hidden');
+            document.getElementById('progress-section').classList.add('hidden');
+            document.getElementById('download-section').classList.add('hidden');
+            document.getElementById('error-section').classList.add('hidden');
+            document.getElementById(section + '-section').classList.remove('hidden');
+        }
+
+        function showDownloadLinks(result) {
+            const linksContainer = document.getElementById('download-links');
+            linksContainer.innerHTML = '';
+
+            if (result.formats.docx) {
+                const docxLink = createDownloadButton('Word Document', result.formats.docx);
+                linksContainer.appendChild(docxLink);
+            }
+
+            if (result.formats.pdf) {
+                const pdfLink = createDownloadButton('PDF Document', result.formats.pdf);
+                linksContainer.appendChild(pdfLink);
+            }
+
+            showSection('download');
+        }
+
+        function createDownloadButton(label, format) {
+            const button = document.createElement('a');
+            button.href = format.download_url;
+            button.className = 'block bg-green-600 text-white py-3 px-6 rounded-lg font-semibold text-center hover:bg-green-700 transition';
+            button.textContent = `Download ${label} (${format.size_formatted})`;
+            return button;
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        function showSuccess(message) {
+            // For single file downloads
+            setTimeout(() => {
+                alert(message);
+                reset();
+            }, 500);
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            showSection('error');
+        }
+
+        function reset() {
+            selectedFile = null;
+            fileInput.value = '';
+            document.getElementById('file-info').classList.add('hidden');
+            convertBtn.disabled = true;
+            showSection('upload');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
