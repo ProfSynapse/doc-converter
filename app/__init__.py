@@ -60,9 +60,9 @@ def create_app(config_name='default'):
             offline=True,  # Request refresh token
             storage=None,  # Use session storage (default)
         )
-        app.register_blueprint(google_bp, url_prefix='/login/google')
+        app.register_blueprint(google_bp, url_prefix='/login')
 
-        app.logger.info(f'Google OAuth blueprint registered at /login/google')
+        app.logger.info(f'Google OAuth blueprint registered at /login')
     else:
         app.logger.warning('Google OAuth not configured - Google Docs conversion disabled')
 

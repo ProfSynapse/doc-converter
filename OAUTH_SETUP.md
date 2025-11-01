@@ -2,11 +2,13 @@
 
 ## Changes Made
 
-Flask-Dance blueprint is now registered at `/login/google` instead of `/auth/google`.
+Flask-Dance blueprint is now registered at `/login` with route prefix.
 
 ### URLs:
 - **Login**: `https://converter.synapticlabs.ai/login/google`
 - **Callback**: `https://converter.synapticlabs.ai/login/google/authorized`
+
+(Flask-Dance adds `/google` to the url_prefix automatically)
 
 ## Google Cloud Console Setup
 
