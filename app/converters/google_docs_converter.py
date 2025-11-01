@@ -21,11 +21,11 @@ from googleapiclient.errors import HttpError
 
 # Optional: markgdoc for simplified conversion
 try:
-    from markgdoc import markdown_to_requests
+    import markgdoc
     MARKGDOC_AVAILABLE = True
 except ImportError:
     MARKGDOC_AVAILABLE = False
-    logging.warning("markgdoc not installed - using basic text insertion")
+    logging.warning("markgdoc not installed - using custom markdown parser")
 
 
 logger = logging.getLogger(__name__)
@@ -268,16 +268,29 @@ class GoogleDocsConverter:
             # Use markgdoc library
             self.logger.debug("Using markgdoc for conversion")
             try:
-                md_requests = markdown_to_requests(markdown_body)
-                requests.extend(md_requests)
+                # markgdoc has convert_to_google_docs but we need just the requests
+                # so we'll use our custom parser which is more reliable
+                md_requests = self._parse_markdown_to_requests(markdown_body)
+                if isinstance(md_requests, list):
+                    requests.extend(md_requests)
+                else:
+                    requests.append(md_requests)
             except Exception as e:
-                self.logger.warning(f"markgdoc conversion failed: {e}")
+                self.logger.warning(f"Markdown parsing failed: {e}")
                 # Fall back to basic text insertion
-                requests.append(self._create_basic_text_request(markdown_body))
+                result = self._create_basic_text_request(markdown_body)
+                if isinstance(result, list):
+                    requests.extend(result)
+                else:
+                    requests.append(result)
         else:
-            # Use basic text insertion
-            self.logger.debug("Using basic text insertion")
-            requests.append(self._create_basic_text_request(markdown_body))
+            # Use custom markdown parser
+            self.logger.debug("Using custom markdown parser")
+            result = self._parse_markdown_to_requests(markdown_body)
+            if isinstance(result, list):
+                requests.extend(result)
+            else:
+                requests.append(result)
 
         return requests
 
@@ -368,17 +381,128 @@ class GoogleDocsConverter:
 
         return requests
 
-    def _create_basic_text_request(self, text: str) -> dict:
+    def _parse_markdown_to_requests(self, text: str):
         """
-        Create basic text insertion request (fallback when markgdoc unavailable).
+        Parse markdown and convert to Google Docs API requests.
+
+        Converts markdown syntax to properly formatted Google Docs API requests.
+        Supports: headings (H1-H6), bold, italic, paragraphs, and line breaks.
 
         Args:
-            text: Text content to insert
+            text: Markdown text content to parse
 
         Returns:
-            dict: insertText API request
+            list: List of Google Docs API request dicts
         """
-        return {
+        import re
+
+        requests = []
+        current_index = 1
+
+        # Split into lines and process
+        lines = text.split('\n')
+
+        for line in lines:
+            if not line.strip():
+                # Empty line - add paragraph break
+                requests.append({
+                    'insertText': {
+                        'location': {'index': current_index},
+                        'text': '\n'
+                    }
+                })
+                current_index += 1
+                continue
+
+            # Check for headings (# heading)
+            heading_match = re.match(r'^(#{1,6})\s+(.+)$', line)
+            if heading_match:
+                level = len(heading_match.group(1))
+                text_content = heading_match.group(2) + '\n'
+
+                # Insert text
+                requests.append({
+                    'insertText': {
+                        'location': {'index': current_index},
+                        'text': text_content
+                    }
+                })
+
+                # Style as heading
+                heading_type = f'HEADING_{level}' if level <= 6 else 'HEADING_6'
+                requests.append({
+                    'updateParagraphStyle': {
+                        'range': {
+                            'startIndex': current_index,
+                            'endIndex': current_index + len(text_content) - 1
+                        },
+                        'paragraphStyle': {
+                            'namedStyleType': heading_type
+                        },
+                        'fields': 'namedStyleType'
+                    }
+                })
+
+                current_index += len(text_content)
+                continue
+
+            # Regular paragraph with inline formatting
+            line_text = line + '\n'
+
+            # Insert the line
+            requests.append({
+                'insertText': {
+                    'location': {'index': current_index},
+                    'text': line_text
+                }
+            })
+
+            # Apply bold formatting (**text** or __text__)
+            for match in re.finditer(r'\*\*(.+?)\*\*|__(.+?)__', line):
+                start = current_index + match.start()
+                end = current_index + match.end()
+                requests.append({
+                    'updateTextStyle': {
+                        'range': {
+                            'startIndex': start,
+                            'endIndex': end
+                        },
+                        'textStyle': {
+                            'bold': True
+                        },
+                        'fields': 'bold'
+                    }
+                })
+
+            # Apply italic formatting (*text* or _text_)
+            for match in re.finditer(r'(?<!\*)\*([^*]+?)\*(?!\*)|(?<!_)_([^_]+?)_(?!_)', line):
+                start = current_index + match.start()
+                end = current_index + match.end()
+                requests.append({
+                    'updateTextStyle': {
+                        'range': {
+                            'startIndex': start,
+                            'endIndex': end
+                        },
+                        'textStyle': {
+                            'italic': True
+                        },
+                        'fields': 'italic'
+                    }
+                })
+
+            current_index += len(line_text)
+
+        # If no requests were created, just insert the raw text
+        if not requests:
+            return {
+                'insertText': {
+                    'location': {'index': 1},
+                    'text': text
+                }
+            }
+
+        return requests if isinstance(requests, list) and len(requests) > 1 else requests[0] if requests else {
             'insertText': {
                 'location': {'index': 1},
                 'text': text

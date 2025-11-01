@@ -13,7 +13,8 @@
       "WebFetch(domain:developers.google.com)",
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:pypi.org)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
