@@ -44,6 +44,9 @@ def create_app(config_name='default'):
     if app.config.get('GOOGLE_OAUTH_CLIENT_ID') and app.config.get('GOOGLE_OAUTH_CLIENT_SECRET'):
         from flask_dance.contrib.google import make_google_blueprint
 
+        # Disable HTTPS requirement for local development
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = str(app.config.get('OAUTHLIB_INSECURE_TRANSPORT', 'False'))
+
         google_bp = make_google_blueprint(
             client_id=app.config['GOOGLE_OAUTH_CLIENT_ID'],
             client_secret=app.config['GOOGLE_OAUTH_CLIENT_SECRET'],
@@ -55,8 +58,10 @@ def create_app(config_name='default'):
                 'profile'
             ],
             offline=True,  # Request refresh token
+            storage=None,  # Use session storage (default)
         )
         app.register_blueprint(google_bp, url_prefix='/login/google')
+
         app.logger.info(f'Google OAuth blueprint registered at /login/google')
     else:
         app.logger.warning('Google OAuth not configured - Google Docs conversion disabled')
@@ -68,6 +73,14 @@ def create_app(config_name='default'):
     # Register API blueprint
     from app.api import api_blueprint
     app.register_blueprint(api_blueprint, url_prefix='/api')
+
+    # Log all registered routes for debugging (after all blueprints registered)
+    with app.app_context():
+        app.logger.info('=== Registered Routes ===')
+        for rule in app.url_map.iter_rules():
+            app.logger.info(f'  {rule.methods} {rule.rule} -> {rule.endpoint}')
+        app.logger.info('=== End Routes ===')
+
 
     # Register error handlers
     register_error_handlers(app)
