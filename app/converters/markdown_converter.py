@@ -166,7 +166,7 @@ class MarkdownConverter:
         self,
         content: str,
         output_path: str,
-        include_front_matter: bool = True
+        include_front_matter: bool = False
     ) -> str:
         """
         Convert markdown to Word document.
