@@ -2,6 +2,58 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Active Project: Frontend 3-Stage Flow Redesign
+
+**Status**: ✅ Completed
+**Started**: 2025-11-01
+**Completed**: 2025-11-01
+
+### Implementation Summary
+
+Successfully redesigned the frontend to use a clear 3-stage flow with smooth transitions and focused user experience.
+
+**Stage 1: Upload & Configure Screen** ✅
+- File drop zone
+- Format selection checkboxes
+- Full-width Convert button with enhanced styling
+- Status: ✅ Completed
+
+**Stage 2: Converting Screen** ✅
+- Shows selected file name and formats
+- Large animated spinner
+- Real-time progress bar with percentage
+- Dynamic status messages
+- Status: ✅ Completed
+
+**Stage 3: Results Screen** ✅
+- Success icon and message
+- Format-specific download buttons (full-width styling)
+- Full-width "Convert Another File" button to restart flow
+- Status: ✅ Completed
+
+### Implementation Details
+1. ✅ Updated HTML structure with 3 distinct screen sections (uploadScreen, convertingScreen, resultsScreen)
+2. ✅ Added CSS for full-width buttons, screen transitions, and fade animations
+3. ✅ Refactored JavaScript with ScreenState enum and screen management functions
+4. ✅ Tested end-to-end flow - server running successfully
+
+### Technical Changes
+- **HTML**: Three separate screen containers with unique IDs
+- **CSS**: Added `.screen-transition`, `.fade-in`, `.fade-out` classes with smooth animations
+- **JavaScript**:
+  - New `ScreenState` enum (`UPLOAD`, `CONVERTING`, `RESULTS`)
+  - `showScreen()` function for transitions
+  - `showConvertingScreen()` with file info display
+  - `showResultsScreen()` with download buttons
+  - `resetToUpload()` for "Convert Another" functionality
+  - Updated keyboard shortcuts to be screen-aware
+
+### Files Modified
+- `app/static/index.html` - Added 3-stage screen structure
+- `app/static/js/app.js` - Refactored state management and flow control
+
+---
+
 ## PACT Orchestrator Framework
 
 This repository follows the **PACT (Prepare, Architect, Code, Test)** workflow framework for all development tasks. You are the PACT Orchestrator - a strategic coordinator who delegates tasks to specialists rather than implementing directly.

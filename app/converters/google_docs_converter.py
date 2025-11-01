@@ -225,8 +225,12 @@ class GoogleDocsConverter:
         """
         self.logger.debug(f"Building API requests for document: {doc_id}")
 
-        # Build list of batchUpdate requests
-        requests = self._build_requests(markdown_body, metadata)
+        # If we have front matter, add it to the first page header
+        if metadata:
+            self._create_first_page_header(doc_id, metadata)
+
+        # Build list of batchUpdate requests for markdown body
+        requests = self._build_requests(markdown_body, metadata=None)  # No metadata in body anymore
 
         if not requests:
             self.logger.warning("No API requests generated - empty document")

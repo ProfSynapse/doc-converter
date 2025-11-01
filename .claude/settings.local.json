@@ -14,7 +14,13 @@
       "WebFetch(domain:dev.to)",
       "WebFetch(domain:pypi.org)",
       "Bash(find:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(source:*)",
+      "Bash(python wsgi.py:*)",
+      "Bash(FLASK_ENV=development venv/bin/python:*)",
+      "Bash(brew install:*)",
+      "WebFetch(domain:stackoverflow.com)",
+      "Bash(export DYLD_LIBRARY_PATH=/opt/homebrew/lib)"
     ],
     "deny": [],
     "ask": []
