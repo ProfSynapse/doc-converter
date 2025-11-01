@@ -24,7 +24,8 @@ class Config:
 
     # Paths
     BASE_DIR = Path(__file__).parent.parent
-    CONVERTED_FOLDER = BASE_DIR / 'tmp' / 'converted'
+    # Use /tmp/converted in production (Docker) for better compatibility
+    CONVERTED_FOLDER = Path(os.environ.get('CONVERTED_FOLDER', '/tmp/converted'))
     TEMPLATE_PATH = BASE_DIR / 'app' / 'templates' / 'template.docx'
 
     # Conversion settings

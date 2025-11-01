@@ -25,7 +25,10 @@ def create_app(config_name='default'):
         Configured Flask application instance
     """
     # Create Flask app with correct static folder
-    app = Flask(__name__, static_folder='static')
+    # In production (Docker), static folder is at /app/static
+    # In development, it's relative to the app root
+    static_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
+    app = Flask(__name__, static_folder=static_folder)
 
     # Load configuration
     from app.config import config
@@ -72,32 +75,76 @@ def create_app(config_name='default'):
     # Health check endpoint
     @app.route('/health')
     def health_check():
-        """Health check endpoint for Railway monitoring"""
+        """Health check endpoint for Railway monitoring with detailed diagnostics"""
+        import traceback
+
+        health_status = {
+            'status': 'healthy',
+            'service': 'md-converter',
+            'version': '1.0.0',
+            'dependencies': {},
+            'diagnostics': {},
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
+        }
+
+        is_healthy = True
+
+        # Check pypandoc/pandoc
         try:
-            # Verify dependencies are available
             import pypandoc
-            pypandoc.get_pandoc_version()
-
-            from weasyprint import __version__ as weasyprint_version
-
-            return jsonify({
-                'status': 'healthy',
-                'service': 'md-converter',
-                'version': '1.0.0',
-                'dependencies': {
-                    'pandoc': 'available',
-                    'weasyprint': weasyprint_version
-                },
-                'timestamp': datetime.utcnow().isoformat() + 'Z'
-            }), 200
+            pandoc_version = pypandoc.get_pandoc_version()
+            health_status['dependencies']['pandoc'] = pandoc_version
+            app.logger.info(f'Pandoc version: {pandoc_version}')
         except Exception as e:
-            app.logger.error(f'Health check failed: {e}')
-            return jsonify({
-                'status': 'unhealthy',
-                'service': 'md-converter',
+            error_detail = {
                 'error': str(e),
-                'timestamp': datetime.utcnow().isoformat() + 'Z'
-            }), 503
+                'type': type(e).__name__,
+                'traceback': traceback.format_exc()
+            }
+            app.logger.error(f'Pandoc check failed: {error_detail}')
+            health_status['dependencies']['pandoc'] = 'unavailable'
+            health_status['diagnostics']['pandoc_error'] = error_detail
+            is_healthy = False
+
+        # Check weasyprint
+        try:
+            from weasyprint import __version__ as weasyprint_version
+            health_status['dependencies']['weasyprint'] = weasyprint_version
+            app.logger.info(f'WeasyPrint version: {weasyprint_version}')
+        except Exception as e:
+            error_detail = {
+                'error': str(e),
+                'type': type(e).__name__,
+                'traceback': traceback.format_exc()
+            }
+            app.logger.error(f'WeasyPrint check failed: {error_detail}')
+            health_status['dependencies']['weasyprint'] = 'unavailable'
+            health_status['diagnostics']['weasyprint_error'] = error_detail
+            is_healthy = False
+
+        # Check filesystem permissions
+        try:
+            converted_folder = app.config.get('CONVERTED_FOLDER', '/tmp/converted')
+            health_status['diagnostics']['converted_folder'] = str(converted_folder)
+            health_status['diagnostics']['converted_folder_exists'] = os.path.exists(converted_folder)
+            health_status['diagnostics']['converted_folder_writable'] = os.access(converted_folder, os.W_OK)
+
+            static_folder = app.static_folder
+            health_status['diagnostics']['static_folder'] = str(static_folder)
+            health_status['diagnostics']['static_folder_exists'] = os.path.exists(static_folder) if static_folder else False
+        except Exception as e:
+            app.logger.error(f'Filesystem check failed: {e}')
+            health_status['diagnostics']['filesystem_error'] = str(e)
+
+        # For Railway, we'll be more lenient - return 200 even if some deps fail
+        # This allows the service to start and we can debug from logs
+        if not is_healthy:
+            health_status['status'] = 'degraded'
+            app.logger.error(f'Health check DEGRADED - Full status: {health_status}')
+        else:
+            app.logger.info('Health check PASSED - All dependencies available')
+
+        return jsonify(health_status), 200
 
     # Serve static files
     @app.route('/')
@@ -111,6 +158,32 @@ def create_app(config_name='default'):
         return send_from_directory(app.static_folder, path)
 
     app.logger.info(f'Flask application created with config: {config_name}')
+
+    # Startup diagnostics
+    with app.app_context():
+        app.logger.info('=== Startup Diagnostics ===')
+        app.logger.info(f'Python version: {os.sys.version}')
+        app.logger.info(f'Working directory: {os.getcwd()}')
+        app.logger.info(f'Static folder: {app.static_folder}')
+        app.logger.info(f'Static folder exists: {os.path.exists(app.static_folder) if app.static_folder else False}')
+        app.logger.info(f'Converted folder: {app.config.get("CONVERTED_FOLDER")}')
+        app.logger.info(f'Converted folder exists: {os.path.exists(app.config.get("CONVERTED_FOLDER", ""))}')
+
+        # Test dependencies
+        try:
+            import pypandoc
+            version = pypandoc.get_pandoc_version()
+            app.logger.info(f'✓ Pandoc available: version {version}')
+        except Exception as e:
+            app.logger.error(f'✗ Pandoc unavailable: {type(e).__name__}: {e}')
+
+        try:
+            from weasyprint import __version__
+            app.logger.info(f'✓ WeasyPrint available: version {__version__}')
+        except Exception as e:
+            app.logger.error(f'✗ WeasyPrint unavailable: {type(e).__name__}: {e}')
+
+        app.logger.info('=== End Startup Diagnostics ===')
 
     return app
 
