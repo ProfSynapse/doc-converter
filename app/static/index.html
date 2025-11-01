@@ -200,43 +200,40 @@
 
         <!-- STAGE 1: Upload & Configure Screen -->
         <div id="uploadScreen" class="bg-white rounded-lg shadow-md overflow-hidden screen-transition">
-            <div class="p-6 sm:p-8">
-                <!-- Drop Zone -->
-                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 sm:p-12 text-center cursor-pointer hover:border-brand-aqua transition-colors duration-200" tabindex="0" role="button" aria-label="Upload markdown file - click or drag and drop">
+            <div class="p-4 sm:p-6">
+                <!-- Drop Zone - Compressed -->
+                <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-brand-aqua transition-colors duration-200" tabindex="0" role="button" aria-label="Upload markdown file - click or drag and drop">
                     <input type="file" id="fileInput" accept=".md,.markdown,.txt" class="hidden" aria-label="File input" />
 
-                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
 
-                    <p class="mt-4 text-lg font-medium text-gray-900">
-                        Drop your markdown file here
-                    </p>
-                    <p class="mt-2 text-sm text-gray-500">
-                        or click to browse
+                    <p class="mt-2 text-base font-medium text-gray-900">
+                        Drop your markdown file here or click to browse
                     </p>
                     <p class="mt-1 text-xs text-gray-400">
-                        Supports .md, .markdown, and .txt files (max 10MB)
+                        .md, .markdown, .txt (max 10MB)
                     </p>
 
                     <!-- Selected File Display -->
-                    <div id="fileNameDisplay" class="hidden mt-6 inline-flex items-center px-4 py-2 bg-brand-aqua/10 text-brand-aqua rounded-full">
-                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <div id="fileNameDisplay" class="hidden mt-3 inline-flex items-center px-3 py-1.5 bg-brand-aqua/10 text-brand-aqua rounded-full">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                             <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
                         </svg>
                         <span id="fileName" class="text-sm font-semibold"></span>
                     </div>
                 </div>
 
-                <!-- Format Selection -->
-                <fieldset class="mt-6">
-                    <legend class="block text-sm font-semibold text-brand-cello mb-3">
+                <!-- Format Selection - Compressed -->
+                <fieldset class="mt-4">
+                    <legend class="block text-sm font-semibold text-brand-cello mb-2">
                         Select Output Format(s)
                     </legend>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <!-- DOCX Format Card -->
-                        <label class="relative flex flex-col items-center p-6 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-brand-purple hover:shadow-md transition-all duration-200 peer-checked:border-brand-purple peer-checked:bg-brand-purple/5 focus-within:ring-2 focus-within:ring-brand-purple focus-within:ring-offset-2">
+                        <label class="relative flex flex-col items-center p-3 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-brand-purple hover:shadow-md transition-all duration-200 peer-checked:border-brand-purple peer-checked:bg-brand-purple/5 focus-within:ring-2 focus-within:ring-brand-purple focus-within:ring-offset-2">
                             <input
                                 type="checkbox"
                                 name="formats"
@@ -246,29 +243,26 @@
                             >
 
                             <!-- Icon -->
-                            <svg class="h-12 w-12 mb-3 text-gray-400 peer-checked:text-brand-purple transition-colors" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <svg class="h-8 w-8 mb-2 text-gray-400 peer-checked:text-brand-purple transition-colors" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                 <path d="M9 12h6M9 16h6M9 8h3" stroke="white" stroke-width="1" stroke-linecap="round"/>
                             </svg>
 
                             <!-- Label -->
-                            <span id="docx-label" class="text-base font-semibold text-brand-cello mb-1">
-                                Microsoft Word
-                            </span>
-                            <span class="text-sm text-gray-500 text-center">
-                                .docx format
+                            <span id="docx-label" class="text-sm font-semibold text-brand-cello">
+                                Word
                             </span>
 
                             <!-- Checkmark indicator -->
-                            <span class="absolute top-3 right-3 flex items-center justify-center w-6 h-6 bg-brand-purple rounded-full opacity-0 peer-checked:opacity-100 transition-opacity">
-                                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <span class="absolute top-2 right-2 flex items-center justify-center w-5 h-5 bg-brand-purple rounded-full opacity-0 peer-checked:opacity-100 transition-opacity">
+                                <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                 </svg>
                             </span>
                         </label>
 
                         <!-- PDF Format Card -->
-                        <label class="relative flex flex-col items-center p-6 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-brand-orange hover:shadow-md transition-all duration-200 peer-checked:border-brand-orange peer-checked:bg-brand-orange/5 focus-within:ring-2 focus-within:ring-brand-orange focus-within:ring-offset-2">
+                        <label class="relative flex flex-col items-center p-3 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-brand-orange hover:shadow-md transition-all duration-200 peer-checked:border-brand-orange peer-checked:bg-brand-orange/5 focus-within:ring-2 focus-within:ring-brand-orange focus-within:ring-offset-2">
                             <input
                                 type="checkbox"
                                 name="formats"
@@ -278,28 +272,25 @@
                             >
 
                             <!-- Icon -->
-                            <svg class="h-12 w-12 mb-3 text-gray-400 peer-checked:text-brand-orange transition-colors" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <svg class="h-8 w-8 mb-2 text-gray-400 peer-checked:text-brand-orange transition-colors" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
 
                             <!-- Label -->
-                            <span id="pdf-label" class="text-base font-semibold text-brand-cello mb-1">
-                                PDF Document
-                            </span>
-                            <span class="text-sm text-gray-500 text-center">
-                                .pdf format
+                            <span id="pdf-label" class="text-sm font-semibold text-brand-cello">
+                                PDF
                             </span>
 
                             <!-- Checkmark indicator -->
-                            <span class="absolute top-3 right-3 flex items-center justify-center w-6 h-6 bg-brand-orange rounded-full opacity-0 peer-checked:opacity-100 transition-opacity">
-                                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <span class="absolute top-2 right-2 flex items-center justify-center w-5 h-5 bg-brand-orange rounded-full opacity-0 peer-checked:opacity-100 transition-opacity">
+                                <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                 </svg>
                             </span>
                         </label>
 
                         <!-- Google Docs Format Card -->
-                        <label class="relative flex flex-col items-center p-6 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-brand-sky hover:shadow-md transition-all duration-200 peer-checked:border-brand-sky peer-checked:bg-brand-sky/5 focus-within:ring-2 focus-within:ring-brand-sky focus-within:ring-offset-2" id="gdocs-card">
+                        <label class="relative flex flex-col items-center p-3 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-brand-sky hover:shadow-md transition-all duration-200 peer-checked:border-brand-sky peer-checked:bg-brand-sky/5 focus-within:ring-2 focus-within:ring-brand-sky focus-within:ring-offset-2" id="gdocs-card">
                             <input
                                 type="checkbox"
                                 name="formats"
@@ -310,41 +301,34 @@
                             >
 
                             <!-- Icon -->
-                            <svg class="h-12 w-12 mb-3 text-gray-400 peer-checked:text-brand-sky transition-colors" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <svg class="h-8 w-8 mb-2 text-gray-400 peer-checked:text-brand-sky transition-colors" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19H8V18H10V19M14,19H10V17H14V19M14,16H10V14H14V16M10,13H8V11H10V13M14,13H10V11H14V13Z" />
                             </svg>
 
                             <!-- Label -->
-                            <span id="gdocs-label" class="text-base font-semibold text-brand-cello mb-1">
+                            <span id="gdocs-label" class="text-sm font-semibold text-brand-cello">
                                 Google Docs
-                            </span>
-                            <span class="text-sm text-gray-500 text-center">
-                                Saved to Drive
                             </span>
 
                             <!-- Sign-in required badge -->
-                            <span class="hidden mt-2 text-xs text-amber-600 font-medium" id="gdocs-auth-badge">
+                            <span class="hidden mt-1 text-xs text-amber-600 font-medium" id="gdocs-auth-badge">
                                 Sign in required
                             </span>
 
                             <!-- Checkmark indicator -->
-                            <span class="absolute top-3 right-3 flex items-center justify-center w-6 h-6 bg-brand-sky rounded-full opacity-0 peer-checked:opacity-100 transition-opacity">
-                                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <span class="absolute top-2 right-2 flex items-center justify-center w-5 h-5 bg-brand-sky rounded-full opacity-0 peer-checked:opacity-100 transition-opacity">
+                                <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                                 </svg>
                             </span>
                         </label>
                     </div>
 
-                    <!-- Selection feedback -->
-                    <p class="mt-3 text-sm text-gray-600" id="selection-count">
-                        No formats selected
-                    </p>
                 </fieldset>
 
-                <!-- Convert Button (Full Width) -->
-                <div class="mt-6">
-                    <button id="convertBtn" disabled class="w-full px-6 py-4 bg-brand-aqua text-white text-lg font-bold rounded-lg hover:bg-brand-aqua/90 focus:outline-none focus:ring-2 focus:ring-brand-aqua focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-lg hover:shadow-xl" aria-label="Convert markdown file">
+                <!-- Convert Button (Full Width) - Compact -->
+                <div class="mt-4">
+                    <button id="convertBtn" disabled class="w-full px-6 py-3 bg-brand-aqua text-white text-base font-bold rounded-lg hover:bg-brand-aqua/90 focus:outline-none focus:ring-2 focus:ring-brand-aqua focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 shadow-md hover:shadow-lg" aria-label="Convert markdown file">
                         <span id="convertBtnText">Convert File</span>
                     </button>
                 </div>
@@ -397,52 +381,69 @@
 
         <!-- STAGE 3: Results Screen -->
         <div id="resultsScreen" class="hidden bg-white rounded-lg shadow-md overflow-hidden screen-transition">
-            <div class="p-6 sm:p-8">
-                <div class="text-center py-8">
-                    <!-- Success Icon -->
-                    <div class="mb-6">
-                        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100">
-                            <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
+            <div class="p-4 sm:p-6">
+                <!-- Success Message - Compact -->
+                <div class="text-center mb-4">
+                    <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-2">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
                     </div>
-
-                    <!-- Success Message -->
-                    <h2 class="text-3xl font-bold text-brand-cello mb-2">
+                    <h2 class="text-xl font-bold text-brand-cello">
                         Conversion Complete!
                     </h2>
-                    <p class="text-lg text-gray-600 mb-8">
-                        Your files are ready to download
-                    </p>
-
-                    <!-- Download Buttons -->
-                    <div class="flex flex-col gap-4 max-w-md mx-auto mb-8">
-                        <button id="downloadDocx" class="hidden inline-flex items-center justify-center px-6 py-4 bg-brand-purple text-white text-lg font-semibold rounded-lg hover:bg-brand-purple/90 focus:outline-none focus:ring-2 focus:ring-brand-purple transition-colors duration-200 shadow-md hover:shadow-lg" aria-label="Download Word document">
-                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Download Word Document
-                        </button>
-                        <button id="downloadPdf" class="hidden inline-flex items-center justify-center px-6 py-4 bg-brand-orange text-white text-lg font-semibold rounded-lg hover:bg-brand-orange/90 focus:outline-none focus:ring-2 focus:ring-brand-orange transition-colors duration-200 shadow-md hover:shadow-lg" aria-label="Download PDF document">
-                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                            Download PDF Document
-                        </button>
-                        <a id="openGdocs" class="hidden inline-flex items-center justify-center px-6 py-4 bg-brand-sky text-white text-lg font-semibold rounded-lg hover:bg-brand-sky/90 focus:outline-none focus:ring-2 focus:ring-brand-sky transition-colors duration-200 shadow-md hover:shadow-lg" target="_blank" rel="noopener noreferrer" aria-label="Open Google Docs document">
-                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                            Open in Google Docs
-                        </a>
-                    </div>
-
-                    <!-- Convert Another Button (Full Width) -->
-                    <button id="convertAnotherBtn" class="w-full px-6 py-4 bg-brand-aqua text-white text-lg font-bold rounded-lg hover:bg-brand-aqua/90 focus:outline-none focus:ring-2 focus:ring-brand-aqua focus:ring-offset-2 transition-colors duration-200 shadow-lg hover:shadow-xl" aria-label="Convert another file">
-                        Convert Another File
-                    </button>
                 </div>
+
+                <!-- Download Cards - Reusing format card design -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <!-- Word Download Card -->
+                    <button id="downloadDocx" class="hidden flex flex-col items-center p-4 bg-brand-purple text-white border-2 border-brand-purple rounded-lg hover:bg-brand-purple/90 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:ring-offset-2" aria-label="Download Word document">
+                        <!-- Icon with download arrow -->
+                        <div class="relative">
+                            <svg class="h-10 w-10 mb-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                <path d="M9 12h6M9 16h6M9 8h3" stroke="white" stroke-width="1" stroke-linecap="round"/>
+                            </svg>
+                            <svg class="absolute -bottom-1 -right-1 h-5 w-5 bg-white rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-semibold">Download Word</span>
+                    </button>
+
+                    <!-- PDF Download Card -->
+                    <button id="downloadPdf" class="hidden flex flex-col items-center p-4 bg-brand-orange text-white border-2 border-brand-orange rounded-lg hover:bg-brand-orange/90 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:ring-offset-2" aria-label="Download PDF document">
+                        <!-- Icon with download arrow -->
+                        <div class="relative">
+                            <svg class="h-10 w-10 mb-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <svg class="absolute -bottom-1 -right-1 h-5 w-5 bg-white rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 10v6m0 0l-3-3m3 3l3-3" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-semibold">Download PDF</span>
+                    </button>
+
+                    <!-- Google Docs Open Card -->
+                    <a id="openGdocs" class="hidden flex flex-col items-center p-4 bg-brand-sky text-white border-2 border-brand-sky rounded-lg hover:bg-brand-sky/90 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-sky focus:ring-offset-2" target="_blank" rel="noopener noreferrer" aria-label="Open Google Docs document">
+                        <!-- Icon with open arrow -->
+                        <div class="relative">
+                            <svg class="h-10 w-10 mb-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,19H8V18H10V19M14,19H10V17H14V19M14,16H10V14H14V16M10,13H8V11H10V13M14,13H10V11H14V13Z" />
+                            </svg>
+                            <svg class="absolute -bottom-1 -right-1 h-5 w-5 bg-white rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                            </svg>
+                        </div>
+                        <span class="text-sm font-semibold">Open in Docs</span>
+                    </a>
+                </div>
+
+                <!-- Convert Another Button (Full Width) -->
+                <button id="convertAnotherBtn" class="w-full px-6 py-3 bg-brand-aqua text-white text-base font-bold rounded-lg hover:bg-brand-aqua/90 focus:outline-none focus:ring-2 focus:ring-brand-aqua focus:ring-offset-2 transition-colors duration-200 shadow-md hover:shadow-lg" aria-label="Convert another file">
+                    Convert Another File
+                </button>
             </div>
         </div>
     </main>
