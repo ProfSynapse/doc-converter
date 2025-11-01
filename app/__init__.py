@@ -59,9 +59,9 @@ def create_app(config_name='default'):
         csp = (
             "default-src 'self'; "
             "script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; "
-            "style-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "font-src 'self' data:; "
+            "style-src 'self' https://cdn.tailwindcss.com https://fonts.googleapis.com 'unsafe-inline'; "
+            "img-src 'self' data: https: https://picoshare-production-7223.up.railway.app; "
+            "font-src 'self' data: https://fonts.gstatic.com; "
             "connect-src 'self';"
         )
         response.headers['Content-Security-Policy'] = csp
