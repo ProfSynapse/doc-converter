@@ -5,39 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown to Word/PDF Converter</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-aqua: #00A99D;
+            --secondary-purple: #93278f;
+            --tertiary-cello: #33475b;
+            --accent-orange: #F7931E;
+            --accent-sky: #29ABE2;
+            --bg-white: #fbf7f1;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00A99D',
+                        secondary: '#93278f',
+                        tertiary: '#33475b',
+                        orange: '#F7931E',
+                        sky: '#29ABE2',
+                        'brand-white': '#fbf7f1',
+                    },
+                    fontFamily: {
+                        'sans': ['Montserrat', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-brand-white min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">Markdown Converter</h1>
-            <p class="text-gray-600">Convert your Markdown files to Word or PDF with ease</p>
+            <div class="flex justify-center items-center mb-4">
+                <img src="https://picoshare-production-7223.up.railway.app/-pRn4EtV2io" alt="Logo" class="h-20 w-20 object-contain">
+            </div>
+            <h1 class="text-4xl font-bold text-tertiary mb-2">Markdown Converter</h1>
+            <p class="text-tertiary font-light">Convert your Markdown files to Word or PDF with ease</p>
         </header>
 
         <main class="max-w-2xl mx-auto">
             <!-- Upload Section -->
             <div id="upload-section" class="bg-white rounded-lg shadow-lg p-8 mb-6">
-                <h2 class="text-2xl font-semibold mb-4">Upload Markdown File</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-tertiary">Upload Markdown File</h2>
 
-                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition">
                     <input type="file" id="file-input" accept=".md,.markdown,.txt" class="hidden">
                     <label for="file-input" class="cursor-pointer">
                         <div class="mb-4">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <svg class="mx-auto h-12 w-12 text-primary" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </div>
-                        <p class="text-lg text-gray-700 mb-2">Click to upload or drag and drop</p>
-                        <p class="text-sm text-gray-500">Markdown files (.md, .markdown, .txt) up to 10MB</p>
+                        <p class="text-lg text-tertiary mb-2">Click to upload or drag and drop</p>
+                        <p class="text-sm text-tertiary font-light">Markdown files (.md, .markdown, .txt) up to 10MB</p>
                     </label>
                 </div>
 
                 <div id="file-info" class="mt-4 hidden">
-                    <p class="text-sm text-gray-600">Selected file: <span id="filename" class="font-medium"></span></p>
-                    <p class="text-sm text-gray-600">Size: <span id="filesize" class="font-medium"></span></p>
+                    <p class="text-sm text-tertiary">Selected file: <span id="filename" class="font-medium"></span></p>
+                    <p class="text-sm text-tertiary">Size: <span id="filesize" class="font-medium"></span></p>
                 </div>
 
                 <div class="mt-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Output Format</label>
+                    <label class="block text-sm font-semibold text-tertiary mb-2">Output Format</label>
                     <div class="flex gap-4">
                         <label class="flex items-center">
                             <input type="radio" name="format" value="both" checked class="mr-2">
@@ -54,43 +92,43 @@
                     </div>
                 </div>
 
-                <button id="convert-btn" disabled class="mt-6 w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition">
+                <button id="convert-btn" disabled class="mt-6 w-full bg-primary text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed transition shadow-md">
                     Convert
                 </button>
             </div>
 
             <!-- Progress Section -->
             <div id="progress-section" class="bg-white rounded-lg shadow-lg p-8 mb-6 hidden">
-                <h2 class="text-2xl font-semibold mb-4">Converting...</h2>
+                <h2 class="text-2xl font-semibold mb-4 text-tertiary">Converting...</h2>
                 <div class="w-full bg-gray-200 rounded-full h-4">
-                    <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div id="progress-bar" class="bg-sky h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
-                <p id="progress-text" class="text-center mt-2 text-gray-600">Uploading file...</p>
+                <p id="progress-text" class="text-center mt-2 text-tertiary font-light">Uploading file...</p>
             </div>
 
             <!-- Download Section -->
             <div id="download-section" class="bg-white rounded-lg shadow-lg p-8 mb-6 hidden">
-                <h2 class="text-2xl font-semibold mb-4 text-green-600">Conversion Complete!</h2>
-                <p class="text-gray-600 mb-4">Your files are ready for download:</p>
+                <h2 class="text-2xl font-semibold mb-4 text-primary">Conversion Complete!</h2>
+                <p class="text-tertiary mb-4">Your files are ready for download:</p>
                 <div id="download-links" class="space-y-3">
                     <!-- Download links will be inserted here -->
                 </div>
-                <button id="reset-btn" class="mt-6 w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition">
+                <button id="reset-btn" class="mt-6 w-full bg-tertiary text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition shadow-md">
                     Convert Another File
                 </button>
             </div>
 
             <!-- Error Section -->
             <div id="error-section" class="bg-white rounded-lg shadow-lg p-8 mb-6 hidden">
-                <h2 class="text-2xl font-semibold mb-4 text-red-600">Error</h2>
-                <p id="error-message" class="text-gray-700 mb-4"></p>
-                <button id="error-reset-btn" class="w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition">
+                <h2 class="text-2xl font-semibold mb-4 text-orange">Error</h2>
+                <p id="error-message" class="text-tertiary mb-4"></p>
+                <button id="error-reset-btn" class="w-full bg-tertiary text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition shadow-md">
                     Try Again
                 </button>
             </div>
         </main>
 
-        <footer class="text-center mt-12 text-gray-500 text-sm">
+        <footer class="text-center mt-12 text-tertiary text-sm font-light">
             <p>Markdown to Word/PDF Converter v1.0.0</p>
             <p class="mt-2">Powered by Flask, Pandoc, and WeasyPrint</p>
         </footer>
@@ -190,7 +228,7 @@
         function createDownloadButton(label, format) {
             const button = document.createElement('a');
             button.href = format.download_url;
-            button.className = 'block bg-green-600 text-white py-3 px-6 rounded-lg font-semibold text-center hover:bg-green-700 transition';
+            button.className = 'block bg-primary text-white py-3 px-6 rounded-lg font-semibold text-center hover:bg-opacity-90 transition shadow-md';
             button.textContent = `Download ${label} (${format.size_formatted})`;
             return button;
         }
