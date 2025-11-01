@@ -217,30 +217,14 @@ class GoogleDocsConverter:
         Raises:
             HttpError: If header creation fails
         """
-        self.logger.debug("Creating first page header with front matter")
+        self.logger.debug("Creating header with front matter")
 
-        # Step 1: Enable "different first page" for headers
-        # Step 2: Create default header
-        # Step 3: Insert front matter content into the default header
-
-        requests = []
-
-        # Enable different first page
-        requests.append({
-            'updateDocumentStyle': {
-                'documentStyle': {
-                    'useFirstPageHeaderFooter': True
-                },
-                'fields': 'useFirstPageHeaderFooter'
-            }
-        })
-
-        # Create default header (this will be used for all pages including first)
-        requests.append({
+        # Create default header (appears on all pages including first)
+        requests = [{
             'createHeader': {
                 'type': 'DEFAULT'
             }
-        })
+        }]
 
         # Execute to get header ID
         response = self.docs_service.documents().batchUpdate(
@@ -249,7 +233,7 @@ class GoogleDocsConverter:
         ).execute()
 
         # Get the header ID from the response
-        header_id = response['replies'][1]['createHeader']['headerId']
+        header_id = response['replies'][0]['createHeader']['headerId']
         self.logger.debug(f"Created header with ID: {header_id}")
 
         # Step 4: Build front matter content for header
