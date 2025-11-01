@@ -43,8 +43,12 @@ def create_app(config_name='default'):
     # Register OAuth blueprint (Flask-Dance)
     if app.config.get('GOOGLE_OAUTH_CLIENT_ID') and app.config.get('GOOGLE_OAUTH_CLIENT_SECRET'):
         from flask_dance.contrib.google import make_google_blueprint
+        from werkzeug.middleware.proxy_fix import ProxyFix
 
-        # Disable HTTPS requirement for local development
+        # Fix for HTTPS behind reverse proxy (Railway)
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+        # Disable HTTPS requirement for local development only
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = str(app.config.get('OAUTHLIB_INSECURE_TRANSPORT', 'False'))
 
         google_bp = make_google_blueprint(
