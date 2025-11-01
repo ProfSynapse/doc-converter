@@ -80,5 +80,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
 
 # Start application with Gunicorn
-# Using shell form (not exec form) to allow environment variable expansion
-CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 2 --timeout 30 --access-logfile - --error-logfile - --log-level info wsgi:app
+# Using sh -c to ensure PORT variable expansion works
+# ${PORT:-8080} provides fallback to 8080 if PORT is not set
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 2 --timeout 30 --access-logfile - --error-logfile - --log-level info wsgi:app"]
