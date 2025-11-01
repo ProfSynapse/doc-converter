@@ -4,21 +4,43 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM Elements
+  // ========== Screen State Management ==========
+  const ScreenState = {
+    UPLOAD: 'upload',
+    CONVERTING: 'converting',
+    RESULTS: 'results'
+  };
+
+  let currentScreen = ScreenState.UPLOAD;
+
+  // Screens
+  const uploadScreen = document.getElementById('uploadScreen');
+  const convertingScreen = document.getElementById('convertingScreen');
+  const resultsScreen = document.getElementById('resultsScreen');
+
+  // DOM Elements - Upload Screen
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
   const fileNameDisplay = document.getElementById('fileNameDisplay');
   const fileName = document.getElementById('fileName');
   const convertBtn = document.getElementById('convertBtn');
   const convertBtnText = document.getElementById('convertBtnText');
-  const progressContainer = document.getElementById('progressContainer');
-  const progressBar = document.getElementById('progressBar');
-  const progressPercent = document.getElementById('progressPercent');
-  const statusMessage = document.getElementById('statusMessage');
-  const downloadContainer = document.getElementById('downloadContainer');
+
+  // DOM Elements - Converting Screen
+  const convertingFileName = document.getElementById('convertingFileName');
+  const convertingFormats = document.getElementById('convertingFormats');
+  const convertingStatusMessage = document.getElementById('convertingStatusMessage');
+  const convertingProgressText = document.getElementById('convertingProgressText');
+  const convertingProgressPercent = document.getElementById('convertingProgressPercent');
+  const convertingProgressBar = document.getElementById('convertingProgressBar');
+
+  // DOM Elements - Results Screen
+  const convertAnotherBtn = document.getElementById('convertAnotherBtn');
   const downloadDocxBtn = document.getElementById('downloadDocx');
   const downloadPdfBtn = document.getElementById('downloadPdf');
   const openGdocsLink = document.getElementById('openGdocs');
+
+  // DOM Elements - Global
   const errorContainer = document.getElementById('errorContainer');
   const errorMessage = document.getElementById('errorMessage');
 
@@ -41,6 +63,61 @@ document.addEventListener('DOMContentLoaded', () => {
   let isProcessing = false;
   let isAuthenticated = false;
   let currentUser = null;
+
+  // ========== Screen Transition Functions ==========
+
+  /**
+   * Show a specific screen and hide others
+   * @param {string} screen - One of ScreenState values
+   */
+  function showScreen(screen) {
+    // Hide all screens first
+    uploadScreen.classList.add('hidden');
+    convertingScreen.classList.add('hidden');
+    resultsScreen.classList.add('hidden');
+
+    // Show the requested screen with animation
+    switch (screen) {
+      case ScreenState.UPLOAD:
+        uploadScreen.classList.remove('hidden');
+        uploadScreen.classList.add('fade-in');
+        currentScreen = ScreenState.UPLOAD;
+        break;
+      case ScreenState.CONVERTING:
+        convertingScreen.classList.remove('hidden');
+        convertingScreen.classList.add('fade-in');
+        currentScreen = ScreenState.CONVERTING;
+        break;
+      case ScreenState.RESULTS:
+        resultsScreen.classList.remove('hidden');
+        resultsScreen.classList.add('fade-in');
+        currentScreen = ScreenState.RESULTS;
+        break;
+    }
+
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /**
+   * Reset to upload screen and clear state
+   */
+  function resetToUpload() {
+    selectedFile = null;
+    currentJobId = null;
+    isProcessing = false;
+    fileInput.value = '';
+    fileNameDisplay.classList.add('hidden');
+
+    // Uncheck all format checkboxes
+    formatCheckboxes.forEach(checkbox => {
+      checkbox.checked = false;
+    });
+
+    updateSelectionCount();
+    hideError();
+    showScreen(ScreenState.UPLOAD);
+  }
 
   // ========== Authentication ==========
 
@@ -155,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (gdocsCheckbox.disabled && !isAuthenticated) {
       e.preventDefault();
       if (confirm('Sign in with Google to enable Google Docs conversion?')) {
-        window.location.href = '/login/google';
+        window.location.href = '/auth/google';
       }
     }
   });
@@ -225,8 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fileNameDisplay.classList.remove('hidden');
     updateSelectionCount();
     hideError();
-    hideDownloads();
-    hideProgress();
   }
 
   function resetFileInput() {
@@ -249,32 +324,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       isProcessing = true;
-      convertBtn.disabled = true;
-      convertBtnText.textContent = 'Converting...';
-
-      // Show progress
-      showProgress('Uploading file...');
       hideError();
-      hideDownloads();
+
+      // Transition to converting screen
+      showConvertingScreen(selectedFile.name, selectedFormats);
 
       // Upload and convert
       const result = await api.convertFile(
         selectedFile,
         selectedFormats,
         (progress) => {
-          updateProgress(progress, 'Uploading...');
+          updateConvertingProgress(progress, 'Uploading...');
         }
       );
 
-      // Update UI for successful conversion
-      updateProgress(100, 'Conversion complete!');
+      // Update progress to complete
+      updateConvertingProgress(100, 'Conversion complete!');
       currentJobId = result.job_id;
 
-      // Show download buttons after short delay
+      // Wait a moment then transition to results screen
       setTimeout(() => {
-        hideProgress();
-        showDownloads(result);
-      }, 500);
+        showResultsScreen(result);
+      }, 800);
 
     } catch (error) {
       console.error('Conversion error:', error);
@@ -290,14 +361,86 @@ document.addEventListener('DOMContentLoaded', () => {
         showError(friendlyError);
       }
 
-      hideProgress();
+      // Return to upload screen on error
+      isProcessing = false;
+      showScreen(ScreenState.UPLOAD);
 
     } finally {
       isProcessing = false;
-      convertBtn.disabled = false;
-      convertBtnText.textContent = 'Convert File';
     }
   });
+
+  /**
+   * Show the converting screen with file info
+   */
+  function showConvertingScreen(filename, formats) {
+    // Set file name
+    convertingFileName.textContent = filename;
+
+    // Format the formats list nicely
+    const formatNames = {
+      'docx': 'Word',
+      'pdf': 'PDF',
+      'gdocs': 'Google Docs'
+    };
+    const formatList = formats.map(f => formatNames[f] || f).join(', ');
+    convertingFormats.textContent = formatList;
+
+    // Reset progress
+    updateConvertingProgress(0, 'Uploading...');
+
+    // Show converting screen
+    showScreen(ScreenState.CONVERTING);
+  }
+
+  /**
+   * Update progress on converting screen
+   */
+  function updateConvertingProgress(percent, message = null) {
+    const clampedPercent = Math.min(100, Math.max(0, percent));
+    convertingProgressBar.style.width = `${clampedPercent}%`;
+    convertingProgressBar.setAttribute('aria-valuenow', clampedPercent);
+    convertingProgressPercent.textContent = `${Math.round(clampedPercent)}%`;
+
+    if (message) {
+      convertingProgressText.textContent = message;
+      convertingStatusMessage.textContent = message;
+    }
+  }
+
+  /**
+   * Show the results screen with download buttons
+   */
+  function showResultsScreen(result) {
+    // Hide all download buttons initially
+    downloadDocxBtn.classList.add('hidden');
+    downloadPdfBtn.classList.add('hidden');
+    openGdocsLink.classList.add('hidden');
+
+    // Show buttons based on conversion results
+    if (result.formats) {
+      // Multi-format response (new style)
+      if (result.formats.docx) {
+        downloadDocxBtn.classList.remove('hidden');
+      }
+
+      if (result.formats.pdf) {
+        downloadPdfBtn.classList.remove('hidden');
+      }
+
+      if (result.formats.gdocs) {
+        openGdocsLink.classList.remove('hidden');
+        openGdocsLink.href = result.formats.gdocs.web_view_link;
+      }
+    } else {
+      // Legacy single format response - show both buttons
+      downloadDocxBtn.classList.remove('hidden');
+      downloadPdfBtn.classList.remove('hidden');
+    }
+
+    // Show results screen
+    showScreen(ScreenState.RESULTS);
+  }
 
   // ========== Download Handlers ==========
 
@@ -307,6 +450,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   downloadPdfBtn.addEventListener('click', () => {
     downloadFile('pdf');
+  });
+
+  // Convert Another button handler
+  convertAnotherBtn.addEventListener('click', () => {
+    resetToUpload();
   });
 
   async function downloadFile(format) {
@@ -351,61 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ========== UI Helper Functions ==========
 
-  function showProgress(message) {
-    progressContainer.classList.remove('hidden');
-    statusMessage.textContent = message;
-    updateProgress(0);
-  }
-
-  function hideProgress() {
-    progressContainer.classList.add('hidden');
-  }
-
-  function updateProgress(percent, message = null) {
-    const clampedPercent = Math.min(100, Math.max(0, percent));
-    progressBar.style.width = `${clampedPercent}%`;
-    progressBar.setAttribute('aria-valuenow', clampedPercent);
-    progressPercent.textContent = `${Math.round(clampedPercent)}%`;
-
-    if (message) {
-      statusMessage.textContent = message;
-    }
-  }
-
-  function showDownloads(result) {
-    downloadContainer.classList.remove('hidden');
-
-    // Hide all download buttons initially
-    downloadDocxBtn.classList.add('hidden');
-    downloadPdfBtn.classList.add('hidden');
-    openGdocsLink.classList.add('hidden');
-
-    // Show buttons based on conversion results
-    if (result.formats) {
-      // Multi-format response (new style)
-      if (result.formats.docx) {
-        downloadDocxBtn.classList.remove('hidden');
-      }
-
-      if (result.formats.pdf) {
-        downloadPdfBtn.classList.remove('hidden');
-      }
-
-      if (result.formats.gdocs) {
-        openGdocsLink.classList.remove('hidden');
-        openGdocsLink.href = result.formats.gdocs.web_view_link;
-      }
-    } else {
-      // Legacy single format response - show both buttons
-      downloadDocxBtn.classList.remove('hidden');
-      downloadPdfBtn.classList.remove('hidden');
-    }
-  }
-
-  function hideDownloads() {
-    downloadContainer.classList.add('hidden');
-  }
-
   function showError(message) {
     errorContainer.classList.remove('hidden');
     errorMessage.textContent = message;
@@ -424,16 +517,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========== Keyboard Shortcuts ==========
 
   document.addEventListener('keydown', (e) => {
-    // Escape key - clear selection
+    // Escape key - depends on current screen
     if (e.key === 'Escape') {
-      resetFileInput();
-      hideError();
-      hideDownloads();
-      hideProgress();
+      if (currentScreen === ScreenState.UPLOAD) {
+        resetFileInput();
+        hideError();
+      } else if (currentScreen === ScreenState.RESULTS) {
+        resetToUpload();
+      }
+      // Don't allow escape during conversion
     }
 
-    // Enter key - convert if file selected
-    if (e.key === 'Enter' && selectedFile && !isProcessing && getSelectedFormats().length > 0) {
+    // Enter key - convert if on upload screen with file selected
+    if (e.key === 'Enter' && currentScreen === ScreenState.UPLOAD && selectedFile && !isProcessing && getSelectedFormats().length > 0) {
       convertBtn.click();
     }
   });
