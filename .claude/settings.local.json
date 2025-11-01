@@ -20,7 +20,9 @@
       "Bash(FLASK_ENV=development venv/bin/python:*)",
       "Bash(brew install:*)",
       "WebFetch(domain:stackoverflow.com)",
-      "Bash(export DYLD_LIBRARY_PATH=/opt/homebrew/lib)"
+      "Bash(export DYLD_LIBRARY_PATH=/opt/homebrew/lib)",
+      "Bash(python:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

@@ -2,24 +2,26 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Active Project: Frontend 3-Stage Flow Redesign + Compression
+## Active Project: Frontend 3-Stage Flow Redesign + Icon-Only Layout
 
-**Status**: ✅ Completed
+**Status**: ✅ COMPLETED - MISSION ACCOMPLISHED
 **Started**: 2025-11-01
 **Completed**: 2025-11-01
 
 ### Implementation Summary
 
-Successfully redesigned the frontend with a 3-stage flow, compressed layouts to eliminate scrolling, and reused format cards as download buttons.
+Successfully redesigned the frontend with a 3-stage flow, side-by-side layout with icon-only format selection, and eliminated all scrolling.
 
-**Stage 1: Upload & Configure Screen** ✅ COMPRESSED
-- Compact file drop zone (reduced padding from p-8/p-12 to p-4)
-- Smaller icon (h-10 from h-16)
-- Condensed text (removed redundant copy)
-- Compressed format cards (p-3 from p-6, h-8 icons from h-12)
-- Shorter labels ("Word" instead of "Microsoft Word")
-- Removed selection count feedback
-- Tighter spacing throughout (mt-4 from mt-6)
+**Stage 1: Upload & Configure Screen** ✅ FINAL
+- **Side-by-side layout**: 4/5 width upload area, 1/5 width icon column
+- **Responsive breakpoint**: `md:` (768px) - shows side-by-side on all but phones
+- **Icon-only format cards**: Square aspect ratio with actual product logos
+  - Word logo (Icons8 CDN)
+  - PDF logo (Wikimedia)
+  - Google Docs logo (Wikimedia)
+- **Larger icons**: h-16 w-16 (64px) for better visibility
+- **Mobile layout**: Icons display horizontally in a row on phones
+- **Removed text labels**: Clean icon-only design with sr-only legend
 - **No scrolling required** - entire screen visible at once
 
 **Stage 2: Converting Screen** ✅
@@ -28,22 +30,29 @@ Successfully redesigned the frontend with a 3-stage flow, compressed layouts to 
 - Real-time progress bar with percentage
 - Dynamic status messages
 
-**Stage 3: Results Screen** ✅ REDESIGNED
-- Compact success icon (h-12 from h-20)
-- Format cards reused as download buttons
-- Cards have colored backgrounds matching format colors
-- Download icons overlay on format icons
+**Stage 3: Results Screen** ✅
+- Compact success icon
+- Format cards reused as download buttons with colored backgrounds
+- Download/open icons overlay on format icons
 - Full-width "Convert Another File" button below
 - **No scrolling required** - clean, focused layout
 
 ### Implementation Details
-1. ✅ Compressed upload screen: smaller padding, icons, and spacing
-2. ✅ Redesigned results screen to reuse format card design as download buttons
-3. ✅ Removed unnecessary UI elements (selection count, verbose labels)
-4. ✅ Both upload and results screens fit without scrolling
+1. ✅ Side-by-side layout with 4/5 and 1/5 grid columns
+2. ✅ Changed breakpoint from xl: (1280px) to md: (768px)
+3. ✅ Square aspect-ratio format cards
+4. ✅ Icon-only design with larger icons (h-16 w-16)
+5. ✅ Replaced SVG icons with actual product logos
+6. ✅ Fixed JavaScript bug: removed references to deleted selection-count element
+7. ✅ Mobile-responsive: row layout on phones, column layout on tablets+
 
 ### Technical Changes
-- **HTML**: Three separate screen containers with unique IDs
+- **HTML**:
+  - Three separate screen containers with unique IDs
+  - Grid layout: `grid-cols-1 md:grid-cols-5` with `md:col-span-4` and `md:col-span-1`
+  - Square format cards with `aspect-square` class
+  - Icon images from CDN sources
+  - Responsive flex direction: `flex-row md:flex-col`
 - **CSS**: Added `.screen-transition`, `.fade-in`, `.fade-out` classes with smooth animations
 - **JavaScript**:
   - New `ScreenState` enum (`UPLOAD`, `CONVERTING`, `RESULTS`)
@@ -52,10 +61,11 @@ Successfully redesigned the frontend with a 3-stage flow, compressed layouts to 
   - `showResultsScreen()` with download buttons
   - `resetToUpload()` for "Convert Another" functionality
   - Updated keyboard shortcuts to be screen-aware
+  - **Bug fix**: Removed references to deleted `selection-count` element
 
 ### Files Modified
-- `app/static/index.html` - Added 3-stage screen structure
-- `app/static/js/app.js` - Refactored state management and flow control
+- `static/index.html` & `app/static/index.html` - Side-by-side layout, icon-only cards
+- `static/js/app.js` & `app/static/js/app.js` - Fixed selection count bug
 
 ---
 

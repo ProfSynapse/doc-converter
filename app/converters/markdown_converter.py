@@ -211,7 +211,6 @@ class MarkdownConverter:
             extra_args = [
                 '--standalone',
                 '--highlight-style=pygments',
-                '--toc',  # Table of contents
             ]
 
             # Add template if provided

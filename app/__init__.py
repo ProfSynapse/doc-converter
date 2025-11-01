@@ -40,6 +40,19 @@ def create_app(config_name='default'):
     # Create necessary directories
     os.makedirs(app.config['CONVERTED_FOLDER'], exist_ok=True)
 
+    # Create Word template with page numbers
+    from app.utils.template_generator import ensure_template_exists
+    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+    template_path = os.path.join(template_dir, 'default.docx')
+
+    try:
+        template_path = ensure_template_exists(template_path)
+        app.config['WORD_TEMPLATE_PATH'] = template_path
+        app.logger.info(f'Word template ready at: {template_path}')
+    except Exception as e:
+        app.logger.warning(f'Failed to create Word template: {e}. Page numbers will not be included.')
+        app.config['WORD_TEMPLATE_PATH'] = None
+
     # Register OAuth blueprint (Flask-Dance)
     if app.config.get('GOOGLE_OAUTH_CLIENT_ID') and app.config.get('GOOGLE_OAUTH_CLIENT_SECRET'):
         from flask_dance.contrib.google import make_google_blueprint

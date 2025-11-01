@@ -154,8 +154,9 @@ def convert():
 
         logger.info(f'Job ID: {job_id}, Directory: {job_dir}')
 
-        # Initialize converter
-        converter = MarkdownConverter()
+        # Initialize converter with template for page numbers
+        template_path = current_app.config.get('WORD_TEMPLATE_PATH')
+        converter = MarkdownConverter(template_path=template_path)
 
         # Convert to each requested format
         results = {}
@@ -417,8 +418,9 @@ def handle_legacy_single_format(file, format_type, base_name):
     job_id = generate_job_id()
     job_dir = get_job_directory(job_id, str(current_app.config['CONVERTED_FOLDER']))
 
-    # Convert
-    converter = MarkdownConverter()
+    # Convert with template for page numbers
+    template_path = current_app.config.get('WORD_TEMPLATE_PATH')
+    converter = MarkdownConverter(template_path=template_path)
     output_path = os.path.join(job_dir, f'{base_name}.{format_type}')
 
     if format_type == 'docx':
