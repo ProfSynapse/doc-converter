@@ -19,8 +19,18 @@ import markdown
 import logging
 from pathlib import Path
 from typing import Dict, Tuple, Optional
-from weasyprint import HTML
 from datetime import datetime
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+
+# Import WeasyPrint conditionally (only needed for PDF)
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError) as e:
+    WEASYPRINT_AVAILABLE = False
+    logging.warning(f"WeasyPrint not available: {e}")
 
 
 logger = logging.getLogger(__name__)
@@ -174,7 +184,7 @@ class MarkdownConverter:
         Args:
             content: Markdown content with YAML front matter
             output_path: Path for output .docx file
-            include_front_matter: Include front matter in document
+            include_front_matter: Include front matter in document header
 
         Returns:
             Path to generated document
@@ -195,18 +205,7 @@ class MarkdownConverter:
             # Parse content
             metadata, md_content = self.parse_markdown(content)
 
-            # Build document
-            document_parts = []
-
-            if include_front_matter:
-                formatted_fm = self.format_front_matter(metadata)
-                if formatted_fm:
-                    document_parts.append(formatted_fm)
-
-            document_parts.append(md_content)
-
-            full_document = '\n'.join(document_parts)
-
+            # Convert markdown body (without front matter in body)
             # Prepare Pandoc arguments
             extra_args = [
                 '--standalone',
@@ -218,14 +217,19 @@ class MarkdownConverter:
                 extra_args.append(f'--reference-doc={self.template_path}')
                 logger.debug(f'Using template: {self.template_path}')
 
-            # Convert with pypandoc
+            # Convert with pypandoc (just the body content)
             pypandoc.convert_text(
-                full_document,
+                md_content,
                 'docx',
                 format='md',
                 outputfile=output_path,
                 extra_args=extra_args
             )
+
+            # Post-process: Add front matter to first page header
+            if include_front_matter and metadata:
+                self._add_front_matter_to_header(output_path, metadata)
+                logger.debug('Added front matter to document header')
 
             file_size = Path(output_path).stat().st_size
             logger.info(f'Successfully created DOCX: {output_path} ({file_size} bytes)')
@@ -259,6 +263,12 @@ class MarkdownConverter:
             ConversionError: If conversion fails
             IOError: If file cannot be written
         """
+        if not WEASYPRINT_AVAILABLE:
+            raise ConversionError(
+                "WeasyPrint is not available. PDF conversion requires WeasyPrint "
+                "with system dependencies installed."
+            )
+
         logger.info(f'Converting to PDF: {output_path}')
 
         try:
@@ -345,11 +355,107 @@ class MarkdownConverter:
         docx_path = str(output_dir / f"{base_name}.docx")
         pdf_path = str(output_dir / f"{base_name}.pdf")
 
-        self.convert_to_docx(content, docx_path)
+        self.convert_to_docx(content, docx_path, include_front_matter=True)
         self.convert_to_pdf(content, pdf_path)
 
         logger.info(f'Successfully converted to both formats')
         return docx_path, pdf_path
+
+    def _add_front_matter_to_header(self, docx_path: str, metadata: Dict) -> None:
+        """
+        Add front matter to the first page header of a DOCX file.
+
+        Args:
+            docx_path: Path to the DOCX file to modify
+            metadata: Front matter metadata dict
+
+        Raises:
+            Exception: If DOCX modification fails
+        """
+        try:
+            # Open the document
+            doc = Document(docx_path)
+
+            # Get or create the first section
+            if not doc.sections:
+                logger.warning("Document has no sections, cannot add header")
+                return
+
+            first_section = doc.sections[0]
+
+            # Enable different first page header
+            first_section.different_first_page_header_footer = True
+
+            # Get the first page header
+            first_page_header = first_section.first_page_header
+
+            # Clear any existing content in the first page header
+            for paragraph in first_page_header.paragraphs:
+                for run in paragraph.runs:
+                    run.clear()
+
+            # Format and add front matter content
+            header_text = self._format_front_matter_for_docx_header(metadata)
+
+            # Add the formatted text to header
+            if header_text:
+                # Clear default paragraphs if they exist
+                while len(first_page_header.paragraphs) > 0:
+                    first_page_header.paragraphs[0]._element.getparent().remove(
+                        first_page_header.paragraphs[0]._element
+                    )
+
+                # Add front matter lines
+                for line in header_text.split('\n'):
+                    if line:  # Skip empty lines
+                        p = first_page_header.add_paragraph(line)
+                        p.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                        # Make the text smaller for header
+                        for run in p.runs:
+                            run.font.size = Pt(10)
+
+            # Save the modified document
+            doc.save(docx_path)
+            logger.debug(f"Successfully added front matter to header in {docx_path}")
+
+        except Exception as e:
+            logger.error(f"Failed to add front matter to header: {e}", exc_info=True)
+            # Don't raise - we still have a valid document, just without header
+            # This allows the conversion to succeed even if header fails
+
+    def _format_front_matter_for_docx_header(self, metadata: Dict) -> str:
+        """
+        Format front matter as plain text for DOCX header (similar to Google Docs).
+
+        Args:
+            metadata: Front matter key-value pairs
+
+        Returns:
+            str: Formatted header text
+        """
+        lines = []
+
+        # Add title if present
+        if 'title' in metadata:
+            lines.append(metadata['title'])
+
+        # Add other metadata
+        for key, value in metadata.items():
+            if key != 'title':
+                # Format key nicely
+                key_display = key.replace('_', ' ').title()
+
+                # Handle different value types
+                if isinstance(value, list):
+                    value_str = ', '.join(str(v) for v in value)
+                elif hasattr(value, 'strftime'):  # Date object
+                    value_str = value.strftime('%Y-%m-%d')
+                else:
+                    value_str = str(value)
+
+                lines.append(f"{key_display}: {value_str}")
+
+        return '\n'.join(lines)
 
     def _format_front_matter_html(self, metadata: Dict) -> str:
         """

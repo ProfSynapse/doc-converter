@@ -165,7 +165,7 @@ def convert():
         if 'docx' in formats:
             try:
                 docx_path = os.path.join(job_dir, f'{base_name}.docx')
-                converter.convert_to_docx(content, docx_path)
+                converter.convert_to_docx(content, docx_path, include_front_matter=True)
 
                 docx_info = get_file_info(docx_path)
                 results['docx'] = {
@@ -424,7 +424,7 @@ def handle_legacy_single_format(file, format_type, base_name):
     output_path = os.path.join(job_dir, f'{base_name}.{format_type}')
 
     if format_type == 'docx':
-        converter.convert_to_docx(content, output_path)
+        converter.convert_to_docx(content, output_path, include_front_matter=True)
     else:  # pdf
         converter.convert_to_pdf(content, output_path)
 
