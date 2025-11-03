@@ -549,5 +549,20 @@
     <script src="/static/js/api.js"></script>
     <script src="/static/js/app.js"></script>
     <script src="/static/js/popup.js"></script>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        // Ensure Lucide icons are rendered after DOM and Lucide script are loaded
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            // If Lucide isn't loaded yet, wait for it
+            window.addEventListener('load', () => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            });
+        }
+    </script>
 </body>
 </html>

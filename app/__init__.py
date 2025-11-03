@@ -116,7 +116,7 @@ def create_app(config_name='default'):
         # Content Security Policy
         csp = (
             "default-src 'self'; "
-            "script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; "
+            "script-src 'self' https://cdn.tailwindcss.com https://unpkg.com 'unsafe-inline'; "
             "style-src 'self' https://cdn.tailwindcss.com https://fonts.googleapis.com 'unsafe-inline'; "
             "img-src 'self' data: https: https://picoshare-production-7223.up.railway.app; "
             "font-src 'self' data: https://fonts.gstatic.com; "
