@@ -123,6 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showScreen(ScreenState.UPLOAD);
   }
 
+  // Make resetToUpload globally accessible for the home button
+  window.resetToUpload = resetToUpload;
+
   // ========== Authentication ==========
 
   /**
