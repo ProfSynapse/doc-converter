@@ -129,6 +129,100 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========== Authentication ==========
 
   /**
+   * Save file and format state to sessionStorage before OAuth redirect
+   */
+  async function saveStateBeforeOAuth() {
+    if (selectedFile) {
+      try {
+        // Read file content as base64
+        const reader = new FileReader();
+        const fileContent = await new Promise((resolve, reject) => {
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(selectedFile);
+        });
+
+        // Get selected formats
+        const selectedFormats = getSelectedFormats();
+
+        // Save state
+        const state = {
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+          fileSize: selectedFile.size,
+          fileContent: fileContent, // base64 data URL
+          selectedFormats: selectedFormats,
+          timestamp: Date.now()
+        };
+        sessionStorage.setItem('mdconverter_oauth_state', JSON.stringify(state));
+      } catch (error) {
+        console.error('Failed to save state:', error);
+        // Continue with OAuth even if save fails
+      }
+    }
+  }
+
+  /**
+   * Restore state after OAuth redirect (if available)
+   */
+  function restoreStateAfterOAuth() {
+    const savedState = sessionStorage.getItem('mdconverter_oauth_state');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        // Check if state is recent (within 5 minutes)
+        const ageMs = Date.now() - state.timestamp;
+        if (ageMs < 5 * 60 * 1000 && state.fileContent) {
+          // Recreate the File object from saved content
+          fetch(state.fileContent)
+            .then(res => res.blob())
+            .then(blob => {
+              const file = new File([blob], state.fileName, {
+                type: state.fileType || 'text/markdown'
+              });
+
+              // Restore the file
+              selectedFile = file;
+              fileName.textContent = file.name;
+              fileNameDisplay.classList.remove('hidden');
+
+              // Restore format selections
+              if (state.selectedFormats && state.selectedFormats.length > 0) {
+                formatCheckboxes.forEach(checkbox => {
+                  checkbox.checked = state.selectedFormats.includes(checkbox.value);
+                });
+              }
+
+              // Update UI
+              updateSelectionCount();
+
+              // Show success message
+              const formatNames = {
+                'docx': 'Word',
+                'pdf': 'PDF',
+                'gdocs': 'Google Docs'
+              };
+              const formatList = (state.selectedFormats || []).map(f => formatNames[f] || f).join(', ');
+              const message = formatList
+                ? `File restored! Ready to convert to ${formatList}.`
+                : `File restored! Select your output formats.`;
+
+              showError(message);
+              setTimeout(() => hideError(), 5000);
+            })
+            .catch(err => {
+              console.error('Failed to restore file:', err);
+            });
+        }
+      } catch (e) {
+        console.error('Failed to restore state:', e);
+      }
+      // Clear the saved state
+      sessionStorage.removeItem('mdconverter_oauth_state');
+    }
+  }
+
+  /**
    * Check authentication status on page load
    */
   async function checkAuthStatus() {
@@ -139,6 +233,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       updateAuthUI();
       updateGoogleDocsAvailability();
+
+      // If user just authenticated, restore their previous state
+      if (isAuthenticated) {
+        restoreStateAfterOAuth();
+      }
 
     } catch (error) {
       console.error('Failed to check auth status:', error);
@@ -223,13 +322,23 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Handle click on disabled Google Docs card
-  gdocsCard.addEventListener('click', (e) => {
+  gdocsCard.addEventListener('click', async (e) => {
     if (gdocsCheckbox.disabled && !isAuthenticated) {
       e.preventDefault();
-      if (confirm('Sign in with Google to enable Google Docs conversion?')) {
-        window.location.href = '/auth/google';
-      }
+      // Save current state before redirect
+      await saveStateBeforeOAuth();
+      // Redirect to OAuth flow
+      window.location.href = '/login/google';
     }
+  });
+
+  // Handle click on Sign In button
+  signInBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    // Save current state before redirect
+    await saveStateBeforeOAuth();
+    // Redirect to OAuth flow
+    window.location.href = '/login/google';
   });
 
   // ========== Drag and Drop Handlers ==========
