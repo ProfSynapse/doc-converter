@@ -20,7 +20,6 @@ import logging
 from pathlib import Path
 from typing import Dict, Tuple, Optional
 from weasyprint import HTML
-from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -78,6 +77,89 @@ class MarkdownConverter:
             )
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
+
+    def _normalize_yaml_frontmatter(self, content: str) -> str:
+        """
+        Normalize YAML front matter to be Pandoc-compatible.
+        
+        NOTE: Currently not used in conversion pipeline. We parse YAML with
+        python-frontmatter (lenient) and format as markdown instead of passing
+        raw YAML to Pandoc (strict parser). Kept for potential future use.
+        
+        Converts multi-line list formats to inline array format to avoid
+        parsing issues with Pandoc's stricter YAML parser.
+        
+        Args:
+            content: Raw markdown string with YAML front matter
+            
+        Returns:
+            Markdown string with normalized YAML front matter
+            
+        Example:
+            Input:
+                ---
+                tags:
+                  - tag-one
+                  - tag-two
+                ---
+            
+            Output:
+                ---
+                tags: [tag-one, tag-two]
+                ---
+        """
+        # Check if content has front matter
+        if not content.strip().startswith('---'):
+            logger.debug('No front matter detected, skipping normalization')
+            return content
+        
+        try:
+            # Parse YAML using python-frontmatter (more lenient)
+            parsed = frontmatter.loads(content)
+            metadata = parsed.metadata
+            body_content = parsed.content
+            
+            if not metadata:
+                logger.debug('No metadata found, skipping normalization')
+                return content
+            
+            # Rebuild YAML with inline lists and proper quoting
+            normalized_lines = ['---']
+            for key, value in metadata.items():
+                if isinstance(value, list):
+                    # Convert lists to inline format with proper quoting
+                    formatted_items = []
+                    for item in value:
+                        item_str = str(item)
+                        # Quote items that contain special characters
+                        if any(char in item_str for char in ['-', ':', ' ', '#', '@', '&', '*']):
+                            formatted_items.append(f'"{item_str}"')
+                        else:
+                            formatted_items.append(item_str)
+                    normalized_lines.append(f'{key}: [{", ".join(formatted_items)}]')
+                elif isinstance(value, str):
+                    # Quote string values that might cause issues
+                    if any(char in value for char in [':', '#', '@', '&', '*']) or value.startswith('-'):
+                        normalized_lines.append(f'{key}: "{value}"')
+                    else:
+                        normalized_lines.append(f'{key}: {value}')
+                else:
+                    # Keep other values as-is (numbers, booleans, etc.)
+                    normalized_lines.append(f'{key}: {value}')
+            
+            normalized_lines.append('---')
+            normalized_frontmatter = '\n'.join(normalized_lines)
+            
+            # Reconstruct the document
+            result = f'{normalized_frontmatter}\n{body_content}'
+            logger.info(f'Normalized YAML front matter - {len(metadata)} fields processed')
+            logger.debug(f'Normalized front matter:\n{normalized_frontmatter}')
+            return result
+            
+        except Exception as e:
+            logger.warning(f'Could not normalize YAML front matter: {e}. Using original content.')
+            logger.debug(f'Original content preview: {content[:200]}...')
+            return content
 
     def parse_markdown(self, content: str) -> Tuple[Dict, str]:
         """
@@ -192,13 +274,14 @@ class MarkdownConverter:
         logger.info(f'Converting to DOCX: {output_path}')
 
         try:
-            # Parse content
+            # Parse content (python-frontmatter is more lenient than Pandoc)
             metadata, md_content = self.parse_markdown(content)
 
-            # Build document
+            # Build document - format front matter as markdown, not YAML
+            # This avoids Pandoc's strict YAML parser entirely
             document_parts = []
 
-            if include_front_matter:
+            if include_front_matter and metadata:
                 formatted_fm = self.format_front_matter(metadata)
                 if formatted_fm:
                     document_parts.append(formatted_fm)
@@ -263,7 +346,7 @@ class MarkdownConverter:
         logger.info(f'Converting to PDF: {output_path}')
 
         try:
-            # Parse content
+            # Parse content (python-frontmatter handles YAML parsing)
             metadata, md_content = self.parse_markdown(content)
 
             # Convert markdown to HTML
@@ -340,16 +423,16 @@ class MarkdownConverter:
         """
         logger.info(f'Converting to both formats: {base_name}')
 
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
 
-        docx_path = str(output_dir / f"{base_name}.docx")
-        pdf_path = str(output_dir / f"{base_name}.pdf")
+        docx_path = str(output_path / f"{base_name}.docx")
+        pdf_path = str(output_path / f"{base_name}.pdf")
 
         self.convert_to_docx(content, docx_path)
         self.convert_to_pdf(content, pdf_path)
 
-        logger.info(f'Successfully converted to both formats')
+        logger.info('Successfully converted to both formats')
         return docx_path, pdf_path
 
     def _format_front_matter_html(self, metadata: Dict) -> str:

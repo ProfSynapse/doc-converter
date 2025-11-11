@@ -368,6 +368,37 @@ The project follows:
 
 ## Troubleshooting
 
+### YAML Front Matter Parsing Errors
+
+The converter uses Python's `frontmatter` library (lenient parser) instead of Pandoc's strict YAML parser. This means:
+
+**✅ All these formats work:**
+```yaml
+# Multi-line lists
+tags:
+  - tag-one
+  - tag-two
+
+# Inline arrays  
+tags: [tag-one, tag-two]
+
+# Values with hyphens
+project: my-project-name
+
+# Unquoted strings
+title: My Document Title
+```
+
+**How it works:**
+1. Python parses your YAML front matter (accepts any valid YAML)
+2. Metadata is formatted as markdown (not passed to Pandoc as YAML)
+3. Clean markdown content goes to Pandoc (no YAML parsing issues)
+
+**Tips for best compatibility:**
+- Keep YAML front matter between `---` markers
+- Use valid YAML syntax (any format)
+- Special characters are handled automatically
+
 ### Pandoc not found
 
 ```bash
