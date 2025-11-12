@@ -171,7 +171,7 @@ class MarkdownConverterAPI {
    */
   validateFile(file) {
     const maxSize = 10 * 1024 * 1024; // 10MB
-    const validExtensions = ['.md', '.markdown', '.txt'];
+    const validExtensions = ['.md', '.markdown', '.txt', '.html', '.htm'];
 
     // Check if file exists
     if (!file) {
@@ -185,7 +185,7 @@ class MarkdownConverterAPI {
     if (!hasValidExtension) {
       return {
         valid: false,
-        error: 'Please upload a .md, .markdown, or .txt file'
+        error: 'Please upload a valid file (.md, .markdown, .txt, .html, .htm)'
       };
     }
 
@@ -240,7 +240,7 @@ class MarkdownConverterAPI {
       'Failed to fetch': 'Unable to connect to server. Please check your internet connection.',
       'NetworkError': 'Network error occurred. Please try again.',
       'Network error': 'Network error occurred. Please check your connection.',
-      'Invalid file type': 'Please upload a .md, .markdown, or .txt file.',
+      'Invalid file type': 'Please upload a valid file (.md, .markdown, .txt, .html, .htm).',
       'File too large': 'File is too large. Maximum size is 10MB.',
       'timeout': 'Request timeout. The file might be too large or the server is busy.',
       '413': 'File is too large. Maximum size is 10MB.',
