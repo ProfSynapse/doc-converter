@@ -7,8 +7,7 @@ to Word (DOCX), PDF, and Google Docs formats.
 
 Dependencies:
     - pypandoc: HTML to Word conversion
-    - weasyprint: PDF generation
-    - bleach: HTML sanitization
+    - playwright: PDF generation with full CSS support (gradients, flexbox, etc.)
     - beautifulsoup4: HTML parsing
 
 Used by: app/api/routes.py for handling HTML conversion requests
@@ -17,8 +16,8 @@ import pypandoc
 import logging
 from pathlib import Path
 from typing import Optional
-from weasyprint import HTML as WeasyHTML
-from app.utils.security import sanitize_html, validate_html_content, count_html_images
+from playwright.sync_api import sync_playwright
+from app.utils.security import validate_html_content, count_html_images
 
 
 logger = logging.getLogger(__name__)
@@ -34,9 +33,9 @@ class HtmlConverter:
     Converts HTML files to Word (DOCX), PDF, and Google Docs formats.
 
     This class handles:
-    - Sanitizing HTML content (XSS prevention)
+    - Validating HTML content (size, image limits)
     - Converting HTML to Word (DOCX) via pypandoc
-    - Converting HTML to PDF via weasyprint
+    - Converting HTML to PDF via Playwright (full CSS support including gradients)
     - Preparing HTML for Google Docs conversion
 
     Example:
@@ -241,12 +240,26 @@ class HtmlConverter:
                 </html>
                 """
 
-            # Generate PDF with WeasyPrint
-            # WeasyPrint automatically fetches images from URLs
-            WeasyHTML(
-                string=html_content,
-                base_url=base_url  # For resolving relative URLs
-            ).write_pdf(output_path)
+            # Generate PDF with Playwright (Chromium)
+            # Playwright uses real Chrome rendering engine for perfect CSS support
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_content(html_content, wait_until='networkidle')
+
+                # Generate PDF with professional settings
+                page.pdf(
+                    path=output_path,
+                    format='A4',
+                    print_background=True,  # Essential for gradients and background colors
+                    margin={
+                        'top': '0.75in',
+                        'right': '0.75in',
+                        'bottom': '0.75in',
+                        'left': '0.75in'
+                    }
+                )
+                browser.close()
 
             file_size = Path(output_path).stat().st_size
             logger.info(f'Successfully created PDF: {output_path} ({file_size} bytes)')

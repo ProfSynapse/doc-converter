@@ -16,7 +16,6 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 from werkzeug.utils import secure_filename as werkzeug_secure_filename
-import bleach
 
 
 logger = logging.getLogger(__name__)
