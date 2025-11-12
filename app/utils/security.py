@@ -276,6 +276,8 @@ def validate_csrf_token(token: str, session_token: str) -> bool:
 # HTML Sanitization Functions
 
 ALLOWED_HTML_TAGS = [
+    # Document structure
+    'html', 'head', 'body', 'title', 'meta', 'style', 'link',
     # Text formatting
     'p', 'br', 'span', 'div',
     # Headings
@@ -297,21 +299,57 @@ ALLOWED_HTML_TAGS = [
 ]
 
 ALLOWED_HTML_ATTRIBUTES = {
-    'a': ['href', 'title', 'name'],
-    'img': ['src', 'alt', 'title', 'width', 'height'],
-    'table': ['border', 'cellpadding', 'cellspacing', 'width'],
-    'th': ['align', 'valign', 'colspan', 'rowspan', 'scope'],
-    'td': ['align', 'valign', 'colspan', 'rowspan'],
-    'tr': ['align', 'valign'],
-    'col': ['span', 'width'],
-    'colgroup': ['span', 'width'],
-    'code': ['class'],  # For syntax highlighting classes
-    'pre': ['class'],
-    'div': ['class'],
-    'span': ['class'],
+    # Document structure
+    'html': ['lang'],
+    'meta': ['charset', 'name', 'content', 'http-equiv'],
+    'link': ['rel', 'href', 'type'],
+    'style': ['type'],
+    # Links and media
+    'a': ['href', 'title', 'name', 'style'],
+    'img': ['src', 'alt', 'title', 'width', 'height', 'style'],
+    # Tables
+    'table': ['border', 'cellpadding', 'cellspacing', 'width', 'style'],
+    'th': ['align', 'valign', 'colspan', 'rowspan', 'scope', 'style'],
+    'td': ['align', 'valign', 'colspan', 'rowspan', 'style'],
+    'tr': ['align', 'valign', 'style'],
+    'col': ['span', 'width', 'style'],
+    'colgroup': ['span', 'width', 'style'],
+    # Text elements with inline styles
+    'code': ['class', 'style'],
+    'pre': ['class', 'style'],
+    'div': ['class', 'style'],
+    'span': ['class', 'style'],
+    'p': ['style'],
+    'h1': ['style'], 'h2': ['style'], 'h3': ['style'],
+    'h4': ['style'], 'h5': ['style'], 'h6': ['style'],
+    'strong': ['style'], 'em': ['style'], 'b': ['style'], 'i': ['style'],
+    'ul': ['style'], 'ol': ['style'], 'li': ['style'],
+    'blockquote': ['style'],
 }
 
 ALLOWED_HTML_PROTOCOLS = ['http', 'https', 'data', 'mailto']
+
+# Allow common CSS properties for inline styles
+# Since output is DOCX/PDF (not web), CSS injection risks are minimal
+ALLOWED_CSS_PROPERTIES = [
+    # Colors
+    'color', 'background', 'background-color',
+    # Typography
+    'font-family', 'font-size', 'font-style', 'font-weight',
+    'line-height', 'text-align', 'text-decoration', 'text-transform',
+    # Spacing
+    'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+    'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+    # Borders
+    'border', 'border-top', 'border-right', 'border-bottom', 'border-left',
+    'border-color', 'border-style', 'border-width', 'border-radius',
+    # Layout
+    'width', 'height', 'max-width', 'max-height', 'min-width', 'min-height',
+    'display', 'position', 'top', 'right', 'bottom', 'left',
+    'float', 'clear', 'overflow', 'vertical-align',
+    # Lists
+    'list-style', 'list-style-type', 'list-style-position',
+]
 
 
 def sanitize_html(html_content: str, strip_comments: bool = True) -> str:
@@ -344,6 +382,7 @@ def sanitize_html(html_content: str, strip_comments: bool = True) -> str:
             tags=ALLOWED_HTML_TAGS,
             attributes=ALLOWED_HTML_ATTRIBUTES,
             protocols=ALLOWED_HTML_PROTOCOLS,
+            styles=ALLOWED_CSS_PROPERTIES,  # Allow safe CSS properties in style attributes
             strip=True,  # Remove disallowed tags entirely
             strip_comments=strip_comments
         )
