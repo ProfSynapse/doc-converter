@@ -1,9 +1,10 @@
-# Multi-Stage Docker Build for Markdown Converter
+# Multi-Stage Docker Build for Markdown & HTML Converter
 # Location: /mnt/c/Users/Joseph/Documents/Code/md-converter/Dockerfile
 #
 # This Dockerfile creates an optimized production-ready image with:
 # - Python 3.12 slim base
-# - System dependencies for Pandoc and WeasyPrint
+# - System dependencies for Pandoc, WeasyPrint, and Playwright/Chromium
+# - Playwright browsers (Chromium) for HTML→PDF with full CSS support
 # - Non-root user for security
 # - Health check for Railway monitoring
 
@@ -17,7 +18,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PORT=8080
 
-# Install system dependencies for Pandoc and WeasyPrint
+# Install system dependencies for Pandoc, WeasyPrint, and Playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Pandoc for Word generation
     pandoc \
@@ -28,6 +29,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-0 \
     libffi-dev \
     shared-mime-info \
+    # Playwright/Chromium dependencies
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
     # Healthcheck dependencies
     curl \
     # Cleanup
@@ -47,10 +62,17 @@ COPY requirements.txt .
 # Install Python dependencies to /install prefix
 RUN pip install --prefix=/install --no-warn-script-location -r requirements.txt
 
+# Install Playwright browsers (Chromium only)
+# This will install browsers to /root/.cache/ms-playwright
+RUN PLAYWRIGHT_BROWSERS_PATH=/ms-playwright python -m playwright install chromium --with-deps
+
 # ============================================
 # Stage 3: Runtime image
 # ============================================
 FROM base
+
+# Set Playwright browser path (must match where we install them)
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Create non-root user for security
 RUN useradd -m -u 1000 -s /bin/bash appuser && \
@@ -61,6 +83,9 @@ WORKDIR /app
 
 # Copy Python packages from builder stage
 COPY --from=builder /install /usr/local
+
+# Copy Playwright browsers from builder stage
+COPY --from=builder /ms-playwright /ms-playwright
 
 # Copy application code
 COPY --chown=appuser:appuser app/ /app/app/
