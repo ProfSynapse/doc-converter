@@ -206,9 +206,64 @@ class MarkdownConverter:
             logger.debug(f'Parsed front matter: {post.metadata.keys()}')
             return post.metadata, post.content
         except Exception as e:
-            logger.warning(f'Failed to parse front matter: {e}. Using empty metadata.')
-            # If no front matter or parsing fails, return empty dict and full content
-            return {}, content
+            logger.warning(f'Failed to parse front matter with python-frontmatter: {e}')
+            # Try manual front matter stripping to protect Pandoc from malformed YAML
+            try:
+                stripped_content = self._strip_front_matter_manually(content)
+                logger.info('Successfully stripped front matter manually')
+                return {}, stripped_content
+            except Exception as strip_error:
+                logger.warning(f'Failed to strip front matter manually: {strip_error}')
+                # Last resort: return content as-is
+                return {}, content
+
+    def _strip_front_matter_manually(self, content: str) -> str:
+        """
+        Manually strip YAML front matter from content when parsing fails.
+
+        This is a fallback for when python-frontmatter can't parse the YAML
+        (e.g., malformed YAML from Obsidian or other editors). We strip the
+        front matter entirely to protect Pandoc from choking on it.
+
+        Args:
+            content: Raw markdown string with potential YAML front matter
+
+        Returns:
+            Content with front matter removed (or original if no front matter found)
+
+        Example:
+            >>> stripped = converter._strip_front_matter_manually(md_string)
+            >>> # Returns content after the closing '---'
+        """
+        content = content.strip()
+
+        # Check if content starts with front matter delimiter
+        if not content.startswith('---'):
+            logger.debug('No front matter delimiter found, returning content as-is')
+            return content
+
+        # Find the closing delimiter (second occurrence of ---)
+        # Split by newlines to process line by line
+        lines = content.split('\n')
+
+        # Start after the first ---
+        closing_index = None
+        for i in range(1, len(lines)):
+            # Look for the closing --- (can have trailing whitespace)
+            if lines[i].strip() == '---':
+                closing_index = i
+                break
+
+        if closing_index is None:
+            logger.warning('Front matter opening found but no closing delimiter. Returning content as-is.')
+            return content
+
+        # Return everything after the closing ---
+        body_lines = lines[closing_index + 1:]
+        body_content = '\n'.join(body_lines).strip()
+
+        logger.debug(f'Manually stripped front matter (lines 0-{closing_index}), kept body content')
+        return body_content
 
     def format_front_matter(self, metadata: Dict) -> str:
         """
@@ -303,7 +358,11 @@ class MarkdownConverter:
             # rather than being converted inline with the markdown content
 
             # Prepare Pandoc arguments
+            # Use markdown-yaml_metadata_block to disable YAML front matter parsing
+            # This prevents Pandoc from misinterpreting content (like "Key: value" patterns
+            # followed by "---" separators) as YAML front matter
             extra_args = [
+                '--from=markdown-yaml_metadata_block',
                 '--standalone',
                 '--highlight-style=pygments',
             ]
@@ -313,7 +372,7 @@ class MarkdownConverter:
                 extra_args.append(f'--reference-doc={self.template_path}')
                 logger.debug(f'Using template: {self.template_path}')
 
-            # Convert with pypandoc (just the body content)
+            # Convert with pypandoc (just the body content, no YAML parsing)
             pypandoc.convert_text(
                 md_content,
                 'docx',
