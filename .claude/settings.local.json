@@ -37,7 +37,10 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "Bash(export FLASK_APP=wsgi.py)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(flask db init:*)",
+      "Bash(flask db migrate:*)",
+      "Bash(flask db:*)"
     ],
     "deny": [],
     "ask": []

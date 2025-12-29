@@ -35,6 +35,13 @@ Thumbs.db
 tmp/
 *.log
 
+# Database
+migrations/
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
 # Docker
 .docker/
 
