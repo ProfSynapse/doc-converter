@@ -56,6 +56,14 @@ class Config:
     SESSION_PERMANENT = False  # Session expires when browser closes
     PERMANENT_SESSION_LIFETIME = 3600  # 1 hour if session made permanent
 
+    # Database configuration
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,  # Verify connections before using them
+        'pool_recycle': 300,    # Recycle connections after 5 minutes
+    }
+
 
 class DevelopmentConfig(Config):
     """Development environment configuration"""

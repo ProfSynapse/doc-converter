@@ -39,6 +39,16 @@ def create_app(config_name='default'):
     # Configure logging
     configure_logging(app)
 
+    # Initialize database extensions
+    from app.extensions import db, migrate
+    db.init_app(app)
+    migrate.init_app(app, db)
+
+    # Import models (required for migrations)
+    with app.app_context():
+        from app.models import AdminUser, Conversion, PageView, AdminSession
+        app.logger.info('Database models imported: AdminUser, Conversion, PageView, AdminSession')
+
     # Create necessary directories
     os.makedirs(app.config['CONVERTED_FOLDER'], exist_ok=True)
 
@@ -92,6 +102,10 @@ def create_app(config_name='default'):
     # Register API blueprint
     from app.api import api_blueprint
     app.register_blueprint(api_blueprint, url_prefix='/api')
+
+    # Register admin blueprint
+    from app.admin import admin_bp
+    app.register_blueprint(admin_bp)
 
     # Log all registered routes for debugging (after all blueprints registered)
     with app.app_context():

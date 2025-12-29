@@ -29,7 +29,15 @@
       "Bash(FLASK_ENV=development python:*)",
       "Bash(pip show:*)",
       "Bash(=1.48.0)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(export FLASK_APP=wsgi.py)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

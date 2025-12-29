@@ -32,3 +32,8 @@ cryptography>=41.0.0
 beautifulsoup4>=4.14.2
 requests>=2.32.0
 playwright>=1.48.0
+
+# Database
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.7
+psycopg2-binary==2.9.10
