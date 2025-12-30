@@ -2,12 +2,11 @@
 # Location: /frontend/railway.toml
 
 [build]
-# Use Nixpacks for Next.js (Railway's default builder)
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-# Start command for Next.js production server
-startCommand = "npm run start"
+# Start command handled by Dockerfile
 
 # Health check
 healthcheckPath = "/"
