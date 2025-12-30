@@ -3,6 +3,7 @@ python-frontmatter==1.0.1
 pypandoc-binary==1.13
 markdown==3.6
 weasyprint==62.3
+pydyf==0.10.0
 mistune==3.0.2
 
 # Syntax Highlighting
