@@ -36,7 +36,9 @@
       "WebFetch(domain:docs.railway.com)",
       "WebFetch(domain:station.railway.com)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(export FLASK_APP=wsgi.py)",
+      "Bash(flask db migrate:*)"
     ],
     "deny": [],
     "ask": []

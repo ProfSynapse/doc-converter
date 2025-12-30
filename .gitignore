@@ -36,7 +36,6 @@ tmp/
 *.log
 
 # Database
-migrations/
 *.db
 *.sqlite
 *.sqlite3
