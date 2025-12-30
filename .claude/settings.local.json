@@ -43,8 +43,7 @@
       "Bash(railway ssh -s backend --command \"python -c \"\"from app import create_app; from app.extensions import db; from app.models import AdminUser; app = create_app\\(''production''\\); ctx = app.app_context\\(\\); ctx.push\\(\\); admin = AdminUser\\(username=''profsynapse''\\); admin.set_password\\(''$ynapticLabs2025''\\); db.session.add\\(admin\\); db.session.commit\\(\\); print\\(''Admin created!''\\)\"\"\")",
       "Bash(railway ssh -s backend \"python -c \"\"from app import create_app; from app.extensions import db; from app.models import AdminUser; app = create_app\\(''production''\\); ctx = app.app_context\\(\\); ctx.push\\(\\); admin = AdminUser\\(username=''profsynapse''\\); admin.set_password\\(''$ynapticLabs2025''\\); db.session.add\\(admin\\); db.session.commit\\(\\); print\\(''Admin created!''\\)\"\"\")",
       "Bash(railway ssh -s backend \"cd /app && python -c ''from app import create_app; from app.extensions import db; from app.models import AdminUser; app = create_app\\(\"\"production\"\"\\); app.app_context\\(\\).push\\(\\); admin = AdminUser\\(username=\"\"profsynapse\"\"\\); admin.set_password\\(\"\"$ynapticLabs2025\"\"\\); db.session.add\\(admin\\); db.session.commit\\(\\); print\\(\"\"Admin created!\"\"\\)''\")",
-      "Bash(railway ssh:*)",
-      "Bash(cat:*)"
+      "Bash(railway ssh:*)"
     ],
     "deny": [],
     "ask": []
