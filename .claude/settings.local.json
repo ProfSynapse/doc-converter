@@ -31,7 +31,12 @@
       "Bash(=1.48.0)",
       "Bash(git add:*)",
       "Bash(git merge:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git ls-tree:*)",
+      "WebFetch(domain:docs.railway.com)",
+      "WebFetch(domain:station.railway.com)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []

@@ -3,7 +3,6 @@
 
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
 
 [deploy]
 # Start command handled by Dockerfile

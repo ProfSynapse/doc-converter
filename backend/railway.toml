@@ -4,9 +4,7 @@
 # This file configures the deployment settings for Railway platform.
 
 [build]
-# Use Dockerfile for building
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
 
 [deploy]
 # Start command - runs database migrations then starts Gunicorn
