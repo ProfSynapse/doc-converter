@@ -1,31 +1,18 @@
-# Railway Configuration
-# Location: /mnt/c/Users/Joseph/Documents/Code/md-converter/railway.toml
-#
-# This file configures the deployment settings for Railway platform.
+# Railway Configuration for Flask Backend
 
 [build]
 builder = "DOCKERFILE"
 
 [deploy]
-# Start command - runs database migrations then starts Gunicorn
-# Using sh -c to ensure proper environment variable expansion
-startCommand = "sh -c 'flask db upgrade && gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 30 --access-logfile - --error-logfile - --log-level info wsgi:app'"
-
-# Restart policy
+startCommand = "sh -c 'flask db upgrade && gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 30 wsgi:app'"
+healthcheckPath = "/health"
+healthcheckTimeout = 10
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
-# Health check configuration
-healthcheckPath = "/health"
-healthcheckTimeout = 10
-
-# Number of replicas (can be scaled up)
-numReplicas = 1
-
 [env]
-# Environment variables with defaults
-PORT = { default = "8080" }
-PYTHON_VERSION = { default = "3.12" }
-LOG_LEVEL = { default = "INFO" }
-MAX_FILE_SIZE = { default = "10485760" }
 FLASK_ENV = { default = "production" }
+# SECRET_KEY - Set this in Railway dashboard (64+ char random string)
+# DATABASE_URL - Reference: ${{Postgres.DATABASE_URL}}
+# GOOGLE_OAUTH_CLIENT_ID - Optional, for Google Docs conversion
+# GOOGLE_OAUTH_CLIENT_SECRET - Optional, for Google Docs conversion
