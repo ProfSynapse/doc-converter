@@ -1,6 +1,6 @@
 # Document Converter
 
-[![Try It](https://img.shields.io/badge/Try_It-converter.synapticlabs.ai-00A99D?style=for-the-badge)](https://converter.synapticlabs.ai)
+[![Try It](https://img.shields.io/badge/Try%20It-converter.synapticlabs.ai-00A99D?style=for-the-badge)](https://converter.synapticlabs.ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![GitHub Stars](https://img.shields.io/github/stars/ProfSynapse/doc-converter?style=for-the-badge)](https://github.com/ProfSynapse/doc-converter/stargazers)
 
