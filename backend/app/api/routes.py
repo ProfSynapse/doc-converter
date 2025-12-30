@@ -14,13 +14,12 @@ Dependencies:
 
 Used by: app/__init__.py via blueprint registration
 """
-from flask import request, jsonify, send_file, current_app, session
+from flask import request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
 from pathlib import Path
 from datetime import datetime
 import logging
 import os
-import io
 
 from app.api import api_blueprint
 from app.api.validators import validate_upload, validate_job_id, validate_content_encoding, validate_markdown_content
@@ -40,13 +39,6 @@ from app.utils.helpers import (
     format_file_size
 )
 from app.utils.security import sanitize_filename
-from app.utils.encryption import (
-    generate_encryption_key,
-    encrypt_file_in_place,
-    decrypt_to_stream,
-    key_to_string,
-    string_to_key
-)
 
 
 logger = logging.getLogger(__name__)
@@ -165,10 +157,6 @@ def convert():
         job_id = generate_job_id()
         job_dir = get_job_directory(job_id, str(current_app.config['CONVERTED_FOLDER']))
 
-        # Generate encryption key for this job and store in session
-        encryption_key = generate_encryption_key()
-        session[f'encryption_key_{job_id}'] = key_to_string(encryption_key)
-
         logger.info(f'Job ID: {job_id}, Directory: {job_dir}')
 
         # Initialize appropriate converter based on file type
@@ -194,25 +182,15 @@ def convert():
                     # Markdown conversion
                     converter.convert_to_docx(content, docx_path, include_front_matter=True)
 
-                # Encrypt the file
-                if not encrypt_file_in_place(docx_path, encryption_key):
-                    logger.error('Failed to encrypt DOCX file')
-                    error = format_error_response(
-                        'ENCRYPTION_ERROR',
-                        'Failed to secure converted file',
-                        500
-                    )
-                    return jsonify(error), 500
-
                 docx_info = get_file_info(docx_path)
                 results['docx'] = {
                     'download_url': f'/api/download/{job_id}/docx',
-                    'filename': docx_info['filename'].replace('.docx', ''),  # Remove extension as it's encrypted
+                    'filename': docx_info['filename'],
                     'size': docx_info['size'],
                     'size_formatted': format_file_size(docx_info['size']),
                     'mimetype': get_mime_type('docx')
                 }
-                logger.info(f'Successfully converted and encrypted DOCX: {docx_path}')
+                logger.info(f'Successfully converted DOCX: {docx_path}')
             except Exception as e:
                 logger.error(f'DOCX conversion failed: {e}', exc_info=True)
                 error = format_error_response(
@@ -234,25 +212,15 @@ def convert():
                     # Markdown conversion
                     converter.convert_to_pdf(content, pdf_path)
 
-                # Encrypt the file
-                if not encrypt_file_in_place(pdf_path, encryption_key):
-                    logger.error('Failed to encrypt PDF file')
-                    error = format_error_response(
-                        'ENCRYPTION_ERROR',
-                        'Failed to secure converted file',
-                        500
-                    )
-                    return jsonify(error), 500
-
                 pdf_info = get_file_info(pdf_path)
                 results['pdf'] = {
                     'download_url': f'/api/download/{job_id}/pdf',
-                    'filename': pdf_info['filename'].replace('.pdf', ''),  # Remove extension as it's encrypted
+                    'filename': pdf_info['filename'],
                     'size': pdf_info['size'],
                     'size_formatted': format_file_size(pdf_info['size']),
                     'mimetype': get_mime_type('pdf')
                 }
-                logger.info(f'Successfully converted and encrypted PDF: {pdf_path}')
+                logger.info(f'Successfully converted PDF: {pdf_path}')
             except Exception as e:
                 logger.error(f'PDF conversion failed: {e}', exc_info=True)
                 error = format_error_response(
@@ -414,41 +382,17 @@ def download(job_id: str, format: str):
             )
             return jsonify(error), 404
 
-        # Get encryption key from session
-        encryption_key_str = session.get(f'encryption_key_{job_id}')
-        if not encryption_key_str:
-            logger.error(f'Encryption key not found in session for job: {job_id}')
-            error = format_error_response(
-                'ENCRYPTION_KEY_MISSING',
-                'Unable to decrypt file. Session may have expired.',
-                403
-            )
-            return jsonify(error), 403
-
-        encryption_key = string_to_key(encryption_key_str)
-
-        # Decrypt file to memory
-        decrypted_content = decrypt_to_stream(file_path, encryption_key)
-        if decrypted_content is None:
-            logger.error(f'Failed to decrypt file: {file_path}')
-            error = format_error_response(
-                'DECRYPTION_ERROR',
-                'Unable to decrypt file',
-                500
-            )
-            return jsonify(error), 500
-
-        # Get original filename
+        # Get filename for download
         file_info = get_file_info(file_path)
-        original_filename = f'{Path(file_info["filename"]).stem}.{format}'
+        download_filename = f'{Path(file_info["filename"]).stem}.{format}'
 
-        logger.info(f'Serving decrypted file: {original_filename} ({len(decrypted_content)} bytes)')
+        logger.info(f'Serving file: {download_filename}')
 
-        # Send decrypted file from memory
+        # Send file directly
         return send_file(
-            io.BytesIO(decrypted_content),
+            file_path,
             as_attachment=True,
-            download_name=original_filename,
+            download_name=download_filename,
             mimetype=get_mime_type(format)
         )
 
