@@ -17,7 +17,7 @@ Used by: app/__init__.py via blueprint registration
 from flask import request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import os
 
@@ -39,6 +39,8 @@ from app.utils.helpers import (
     format_file_size
 )
 from app.utils.security import sanitize_filename
+from app.extensions import db
+from app.models import Conversion
 
 
 logger = logging.getLogger(__name__)
@@ -68,7 +70,7 @@ def convert():
         429: Rate limit exceeded
         500: Conversion error
     """
-    start_time = datetime.utcnow()
+    start_time = datetime.now(timezone.utc)
 
     # Validate request
     validation_error = validate_upload(request)
@@ -292,13 +294,31 @@ def convert():
         # Build success response
         processing_time = calculate_processing_time(start_time)
 
+        # Record conversion to database for metrics
+        try:
+            conversion = Conversion(
+                job_id=job_id,
+                original_filename=original_filename,
+                file_size_bytes=len(content.encode('utf-8')),
+                formats=','.join(formats),
+                success=True,
+                processing_time_ms=int(processing_time * 1000)
+            )
+            db.session.add(conversion)
+            db.session.commit()
+            logger.info(f'Recorded conversion metrics for job: {job_id}')
+        except Exception as e:
+            logger.error(f'Failed to record conversion metrics: {e}')
+            # Don't fail the request if metrics recording fails
+            db.session.rollback()
+
         response = {
             'status': 'success',
             'job_id': job_id,
             'filename': base_name,
             'formats': results,
             'processing_time': round(processing_time, 2),
-            'timestamp': datetime.utcnow().isoformat() + 'Z'
+            'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
         }
 
         logger.info(f'Successfully converted {base_name} to {len(formats)} format(s) in {processing_time:.2f}s')
@@ -513,10 +533,10 @@ def cleanup():
 
         response = {
             'status': 'success',
-            'message': f'Cleanup completed',
+            'message': 'Cleanup completed',
             'deleted_directories': deleted_count,
             'max_age_hours': max_age_hours,
-            'timestamp': datetime.utcnow().isoformat() + 'Z'
+            'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
         }
 
         logger.info(f'Cleanup completed: {deleted_count} directories deleted')
