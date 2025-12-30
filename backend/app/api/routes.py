@@ -294,11 +294,11 @@ def convert():
         # Build success response
         processing_time = calculate_processing_time(start_time)
 
-        # Record conversion to database for metrics
+        # Record conversion to database for metrics (no filename for privacy)
         try:
             conversion = Conversion(
                 job_id=job_id,
-                original_filename=original_filename,
+                original_filename='[redacted]',  # Privacy: don't store user filenames
                 file_size_bytes=len(content.encode('utf-8')),
                 formats=','.join(formats),
                 success=True,

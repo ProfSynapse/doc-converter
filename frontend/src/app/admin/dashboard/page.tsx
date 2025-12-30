@@ -29,6 +29,19 @@ import {
   BarChart3,
   FileDown,
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 
 interface DashboardStats {
   totalConversions: number;
@@ -41,14 +54,15 @@ interface DashboardStats {
     pdf: number;
     gdocs: number;
   };
+  dailyConversions?: { date: string; count: number }[];
 }
 
 interface RecentConversion {
   id: number;
   job_id: string;
-  original_filename: string;
   formats: string;
   success: boolean;
+  processing_time_ms: number;
   created_at: string;
 }
 
@@ -61,23 +75,28 @@ interface RecentPageView {
   created_at: string;
 }
 
+type TimePeriod = '1d' | '7d' | '30d' | 'all';
+
+const COLORS = ['#93278f', '#F7931E', '#29ABE2'];
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentConversions, setRecentConversions] = useState<RecentConversion[]>([]);
   const [recentPageViews, setRecentPageViews] = useState<RecentPageView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('7d');
   const router = useRouter();
 
-  const fetchData = async () => {
+  const fetchData = async (period: TimePeriod = timePeriod) => {
     try {
       setIsLoading(true);
       setError(null);
 
       const [statsRes, conversionsRes, pageViewsRes] = await Promise.all([
-        fetch('/api/admin/metrics/stats'),
-        fetch('/api/admin/metrics/conversions'),
-        fetch('/api/admin/metrics/page-views'),
+        fetch(`/api/admin/metrics/stats?period=${period}`),
+        fetch(`/api/admin/metrics/conversions?period=${period}`),
+        fetch(`/api/admin/metrics/page-views?period=${period}`),
       ]);
 
       if (!statsRes.ok || !conversionsRes.ok || !pageViewsRes.ok) {
@@ -109,6 +128,11 @@ export default function AdminDashboardPage() {
     fetchData();
   }, []);
 
+  const handleTimePeriodChange = (period: TimePeriod) => {
+    setTimePeriod(period);
+    fetchData(period);
+  };
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin/login');
@@ -119,6 +143,15 @@ export default function AdminDashboardPage() {
       ? ((stats.successfulConversions / stats.totalConversions) * 100).toFixed(1)
       : '0'
     : '0';
+
+  // Format breakdown data for pie chart
+  const pieData = stats?.formatBreakdown
+    ? [
+        { name: 'Word', value: stats.formatBreakdown.docx },
+        { name: 'PDF', value: stats.formatBreakdown.pdf },
+        { name: 'Google Docs', value: stats.formatBreakdown.gdocs },
+      ].filter((d) => d.value > 0)
+    : [];
 
   if (isLoading) {
     return (
@@ -145,7 +178,7 @@ export default function AdminDashboardPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={fetchData}
+                onClick={() => fetchData()}
                 className="flex items-center"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -171,6 +204,26 @@ export default function AdminDashboardPage() {
             {error}
           </div>
         )}
+
+        {/* Time Period Filter */}
+        <div className="mb-6 flex gap-2">
+          {[
+            { value: '1d', label: 'Today' },
+            { value: '7d', label: 'Last 7 days' },
+            { value: '30d', label: 'Last 30 days' },
+            { value: 'all', label: 'All time' },
+          ].map((option) => (
+            <Button
+              key={option.value}
+              variant={timePeriod === option.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleTimePeriodChange(option.value as TimePeriod)}
+              className={timePeriod === option.value ? 'bg-[#00A99D] hover:bg-[#00A99D]/90' : ''}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -233,35 +286,86 @@ export default function AdminDashboardPage() {
           </Card>
         </div>
 
-        {/* Format Breakdown */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Format Breakdown</CardTitle>
-            <CardDescription>Conversions by output format</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-[#93278f]/10 rounded-lg">
-                <div className="text-2xl font-bold text-[#93278f]">
-                  {stats?.formatBreakdown?.docx || 0}
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Conversions Over Time */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Conversions Over Time</CardTitle>
+              <CardDescription>Daily conversion activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stats?.dailyConversions && stats.dailyConversions.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={stats.dailyConversions}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                      }}
+                    />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip
+                      labelFormatter={(value) => new Date(value).toLocaleDateString()}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="#00A99D"
+                      strokeWidth={2}
+                      dot={{ fill: '#00A99D' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center text-gray-500">
+                  No conversion data yet
                 </div>
-                <div className="text-sm text-gray-600 mt-1">Word (DOCX)</div>
-              </div>
-              <div className="text-center p-4 bg-[#F7931E]/10 rounded-lg">
-                <div className="text-2xl font-bold text-[#F7931E]">
-                  {stats?.formatBreakdown?.pdf || 0}
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Format Breakdown Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Format Breakdown</CardTitle>
+              <CardDescription>Conversions by output format</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
+                    >
+                      {pieData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[250px] flex items-center justify-center text-gray-500">
+                  No format data yet
                 </div>
-                <div className="text-sm text-gray-600 mt-1">PDF</div>
-              </div>
-              <div className="text-center p-4 bg-[#29ABE2]/10 rounded-lg">
-                <div className="text-2xl font-bold text-[#29ABE2]">
-                  {stats?.formatBreakdown?.gdocs || 0}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">Google Docs</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Data Tables */}
         <Tabs defaultValue="conversions" className="space-y-4">
@@ -280,26 +384,38 @@ export default function AdminDashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>File</TableHead>
+                      <TableHead>Job ID</TableHead>
                       <TableHead>Formats</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Processing Time</TableHead>
                       <TableHead>Time</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {recentConversions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-gray-500">
+                        <TableCell colSpan={5} className="text-center text-gray-500">
                           No conversions yet
                         </TableCell>
                       </TableRow>
                     ) : (
                       recentConversions.map((conv) => (
                         <TableRow key={conv.id}>
-                          <TableCell className="font-medium">
-                            {conv.original_filename}
+                          <TableCell className="font-mono text-xs">
+                            {conv.job_id.slice(0, 8)}...
                           </TableCell>
-                          <TableCell>{conv.formats}</TableCell>
+                          <TableCell>
+                            <span className="inline-flex gap-1">
+                              {conv.formats.split(',').map((fmt) => (
+                                <span
+                                  key={fmt}
+                                  className="px-2 py-0.5 text-xs rounded bg-gray-100"
+                                >
+                                  {fmt.trim().toUpperCase()}
+                                </span>
+                              ))}
+                            </span>
+                          </TableCell>
                           <TableCell>
                             {conv.success ? (
                               <span className="flex items-center text-green-600">
@@ -312,6 +428,9 @@ export default function AdminDashboardPage() {
                                 Failed
                               </span>
                             )}
+                          </TableCell>
+                          <TableCell className="text-gray-500">
+                            {conv.processing_time_ms ? `${conv.processing_time_ms}ms` : '-'}
                           </TableCell>
                           <TableCell className="text-gray-500">
                             {new Date(conv.created_at).toLocaleString()}
@@ -360,8 +479,7 @@ export default function AdminDashboardPage() {
                             {new Date(view.created_at).toLocaleString()}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
+                      ))}
                   </TableBody>
                 </Table>
               </CardContent>

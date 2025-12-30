@@ -47,7 +47,8 @@
       "Bash(cat:*)",
       "Bash(git revert:*)",
       "Bash(npm run build:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []
