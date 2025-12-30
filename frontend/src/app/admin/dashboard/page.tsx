@@ -479,7 +479,8 @@ export default function AdminDashboardPage() {
                             {new Date(view.created_at).toLocaleString()}
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
