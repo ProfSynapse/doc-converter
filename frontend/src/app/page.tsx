@@ -14,6 +14,9 @@ export default function Home() {
           <p className="mt-2 text-sm text-gray-600 font-light">
             Convert your markdown and HTML files to Word, PDF, or Google Docs
           </p>
+          <p className="mt-1 text-xs text-gray-500">
+            100% open source — <a href="https://github.com/ProfSynapse/doc-converter" target="_blank" rel="noopener noreferrer" className="text-[#00A99D] hover:underline">view the code on GitHub</a>
+          </p>
         </div>
       </div>
 

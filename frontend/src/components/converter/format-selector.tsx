@@ -79,15 +79,13 @@ export function FormatSelector({
               key={format.id}
               type="button"
               onClick={() => handleFormatClick(format)}
-              disabled={false} // Allow clicking for auth redirect
-              aria-label={`${format.name} format${isDisabled ? ' (sign in required)' : ''}`}
+              aria-label={`${format.name} format${isDisabled ? ' (click to sign in)' : ''}`}
               aria-pressed={isSelected}
               className={cn(
                 'relative flex items-center justify-center aspect-square p-3 bg-white border-2 rounded-lg cursor-pointer transition-all duration-200',
                 'hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                 isSelected && [format.borderColor, format.bgColor],
                 !isSelected && 'border-gray-300',
-                isDisabled && 'opacity-50 cursor-not-allowed',
                 `hover:${format.borderColor}`,
                 `focus-visible:ring-[${format.color}]`
               )}
@@ -104,13 +102,6 @@ export function FormatSelector({
                 className="h-16 w-16"
                 unoptimized // External URLs
               />
-
-              {/* Sign-in badge for Google Docs */}
-              {format.requiresAuth && !isAuthenticated && (
-                <span className="absolute bottom-0.5 text-xs text-amber-600 font-bold bg-white px-1 py-0.5 rounded">
-                  Sign in
-                </span>
-              )}
 
               {/* Checkmark indicator */}
               {isSelected && (
