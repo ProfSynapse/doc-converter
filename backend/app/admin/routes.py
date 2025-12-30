@@ -25,13 +25,24 @@ def verify_credentials():
         username = data.get('username')
         password = data.get('password')
 
+        logger.info(f'Login attempt - username: {username}, password length: {len(password) if password else 0}')
+
         if not username or not password:
             return jsonify({'error': 'Username and password are required'}), 400
 
         # Find user in database
         user = AdminUser.query.filter_by(username=username).first()
 
-        if not user or not user.check_password(password):
+        if not user:
+            logger.warning(f'User not found: {username}')
+            return jsonify({'error': 'Invalid credentials'}), 401
+
+        logger.info(f'User found: {user.username} (id: {user.id}), hash prefix: {user.password_hash[:30]}...')
+
+        password_ok = user.check_password(password)
+        logger.info(f'Password check result: {password_ok}')
+
+        if not password_ok:
             logger.warning(f'Failed admin login attempt for username: {username}')
             return jsonify({'error': 'Invalid credentials'}), 401
 
