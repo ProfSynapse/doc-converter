@@ -13,7 +13,7 @@ Used by: app/api/routes.py for response formatting
 import os
 import mimetypes
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
 
@@ -50,7 +50,7 @@ def format_error_response(
         'error': message,
         'code': code,
         'status': status,
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
+        'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
     }
 
     if extra:
@@ -81,7 +81,7 @@ def format_success_response(
     """
     response = {
         'status': 'success',
-        'timestamp': datetime.utcnow().isoformat() + 'Z'
+        'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
     }
     response.update(data)
 
@@ -178,13 +178,13 @@ def calculate_processing_time(start_time: datetime) -> float:
         Processing time in seconds
 
     Example:
-        >>> from datetime import datetime
-        >>> start = datetime.utcnow()
+        >>> from datetime import datetime, timezone
+        >>> start = datetime.now(timezone.utc)
         >>> # ... do work ...
         >>> duration = calculate_processing_time(start)
         >>> print(f'Took {duration:.2f} seconds')
     """
-    end_time = datetime.utcnow()
+    end_time = datetime.now(timezone.utc)
     delta = end_time - start_time
     return delta.total_seconds()
 
@@ -201,7 +201,7 @@ def generate_timestamp() -> str:
         >>> print(timestamp)
         '2025-10-31T10:30:00Z'
     """
-    return datetime.utcnow().isoformat() + 'Z'
+    return datetime.now(timezone.utc).isoformat() + 'Z'
 
 
 def safe_int(value: Any, default: int = 0) -> int:
