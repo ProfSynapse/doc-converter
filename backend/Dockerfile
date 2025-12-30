@@ -93,6 +93,7 @@ COPY --from=builder /ms-playwright /ms-playwright
 # Copy application code
 COPY --chown=appuser:appuser app/ /app/app/
 COPY --chown=appuser:appuser static/ /app/static/
+COPY --chown=appuser:appuser migrations/ /app/migrations/
 COPY --chown=appuser:appuser wsgi.py /app/
 COPY --chown=appuser:appuser requirements.txt /app/
 
