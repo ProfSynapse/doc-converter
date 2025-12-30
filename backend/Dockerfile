@@ -13,10 +13,7 @@
 # ============================================
 FROM python:3.12-slim as base
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PORT=8080
+ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies for Pandoc, WeasyPrint, and Playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
