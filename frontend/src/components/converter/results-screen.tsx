@@ -125,7 +125,7 @@ export function ResultsScreen({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Button
             onClick={onConvertAnother}
-            className="flex items-center justify-center px-6 py-3 bg-[#00A99D] text-white text-base font-bold rounded-lg hover:bg-[#00A99D]/90"
+            className="flex items-center justify-center h-12 px-6 bg-[#00A99D] text-white text-base font-bold rounded-lg hover:bg-[#00A99D]/90"
             aria-label="Convert another file"
           >
             <RefreshCw className="w-5 h-5 mr-2" />
@@ -136,7 +136,7 @@ export function ResultsScreen({
             href="https://donate.stripe.com/bIY4gsgDo2mJ5kkfZ6"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center px-6 py-3 bg-[#F7931E] text-white text-base font-bold rounded-lg hover:bg-[#F7931E]/90 transition-colors"
+            className="flex items-center justify-center h-12 px-6 bg-[#F7931E] text-white text-base font-bold rounded-lg hover:bg-[#F7931E]/90 transition-colors"
           >
             <Coffee className="w-5 h-5 mr-2" />
             Buy us a Coffee
