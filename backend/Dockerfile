@@ -90,6 +90,9 @@ COPY --from=builder /install /usr/local
 # Copy Playwright browsers from builder stage
 COPY --from=builder /ms-playwright /ms-playwright
 
+# Cache buster - change this value to force rebuild of app layers
+ARG CACHEBUST=1
+
 # Copy application code
 COPY --chown=appuser:appuser app/ /app/app/
 COPY --chown=appuser:appuser migrations/ /app/migrations/
