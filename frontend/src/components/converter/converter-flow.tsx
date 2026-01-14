@@ -116,7 +116,9 @@ export function ConverterFlow() {
   // Handle auth required
   const handleAuthRequired = async () => {
     await saveStateBeforeOAuth();
-    window.location.href = '/login/google';
+    // Redirect directly to Flask backend for OAuth
+    const flaskUrl = process.env.NEXT_PUBLIC_FLASK_API_URL || '';
+    window.location.href = `${flaskUrl}/login/google`;
   };
 
   // Handle format toggle
@@ -172,7 +174,8 @@ export function ConverterFlow() {
         setError('Google Docs conversion requires authentication. Please sign in.');
         if (confirm('Sign in with Google now?')) {
           await saveStateBeforeOAuth();
-          window.location.href = error.authUrl || '/login/google';
+          const flaskUrl = process.env.NEXT_PUBLIC_FLASK_API_URL || '';
+          window.location.href = error.authUrl || `${flaskUrl}/login/google`;
         }
       } else {
         setError(api.getUserFriendlyError(error));

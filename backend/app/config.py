@@ -52,9 +52,12 @@ class Config:
     # Session cookie security
     SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access
     SESSION_COOKIE_SECURE = True  # HTTPS only (enforced in production)
-    SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
+    SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site requests (required for separate frontend/backend domains)
     SESSION_PERMANENT = False  # Session expires when browser closes
     PERMANENT_SESSION_LIFETIME = 3600  # 1 hour if session made permanent
+
+    # Frontend URL for OAuth redirects (set this to your frontend domain)
+    FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///app.db')

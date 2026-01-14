@@ -7,8 +7,9 @@ It registers blueprints, error handlers, and applies middleware.
 
 Used by: wsgi.py for production deployment
 """
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, redirect
 from flask.logging import default_handler
+from flask_cors import CORS
 import logging
 import os
 import threading
@@ -65,9 +66,17 @@ def create_app(config_name='default'):
         app.logger.warning(f'Failed to create Word template: {e}. Page numbers will not be included.')
         app.config['WORD_TEMPLATE_PATH'] = None
 
+    # Initialize CORS for cross-domain requests from frontend
+    frontend_url = app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    CORS(app, origins=[frontend_url], supports_credentials=True,
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'OPTIONS'])
+    app.logger.info(f'CORS enabled for frontend: {frontend_url}')
+
     # Register OAuth blueprint (Flask-Dance)
     if app.config.get('GOOGLE_OAUTH_CLIENT_ID') and app.config.get('GOOGLE_OAUTH_CLIENT_SECRET'):
         from flask_dance.contrib.google import make_google_blueprint
+        from flask_dance.consumer import oauth_authorized
         from werkzeug.middleware.proxy_fix import ProxyFix
 
         # Fix for HTTPS behind reverse proxy (Railway)
@@ -88,10 +97,18 @@ def create_app(config_name='default'):
             ],
             offline=True,  # Request refresh token
             storage=None,  # Use session storage (default)
+            redirect_to='oauth_complete',  # Redirect to our custom handler
         )
         app.register_blueprint(google_bp, url_prefix='/login')
 
+        # Custom route to handle post-OAuth redirect to frontend
+        @app.route('/oauth_complete')
+        def oauth_complete():
+            """Redirect to frontend after successful OAuth"""
+            return redirect(frontend_url)
+
         app.logger.info(f'Google OAuth blueprint registered at /login')
+        app.logger.info(f'OAuth will redirect to frontend: {frontend_url}')
     else:
         app.logger.warning('Google OAuth not configured - Google Docs conversion disabled')
 

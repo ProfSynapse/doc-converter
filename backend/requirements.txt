@@ -11,6 +11,7 @@ pygments==2.18.0
 
 # Web Framework
 flask==3.0.3
+flask-cors==5.0.0
 gunicorn==22.0.0
 werkzeug==3.0.3
 

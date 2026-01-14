@@ -24,6 +24,12 @@ export interface ValidationResult {
 const ALLOWED_EXTENSIONS = ['.md', '.markdown', '.txt', '.html', '.htm'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+// Backend URL - use environment variable or default to localhost
+// In production, set NEXT_PUBLIC_FLASK_API_URL to your Flask backend URL
+const FLASK_API_URL = typeof window !== 'undefined'
+  ? (process.env.NEXT_PUBLIC_FLASK_API_URL || '')
+  : '';
+
 export class MarkdownConverterAPI {
   /**
    * Validate file before upload
@@ -114,7 +120,8 @@ export class MarkdownConverterAPI {
         reject({ error: 'Request timed out' });
       });
 
-      xhr.open('POST', '/api/convert');
+      xhr.open('POST', `${FLASK_API_URL}/api/convert`);
+      xhr.withCredentials = true; // Send cookies for cross-origin requests
       xhr.timeout = 300000; // 5 minute timeout
       xhr.send(formData);
     });
@@ -128,7 +135,9 @@ export class MarkdownConverterAPI {
     format: string,
     filename: string
   ): Promise<void> {
-    const response = await fetch(`/api/download/${jobId}/${format}`);
+    const response = await fetch(`${FLASK_API_URL}/api/download/${jobId}/${format}`, {
+      credentials: 'include', // Send cookies for cross-origin requests
+    });
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Download failed' }));
@@ -151,7 +160,9 @@ export class MarkdownConverterAPI {
    * Check authentication status
    */
   async checkAuthStatus(): Promise<AuthStatus> {
-    const response = await fetch('/api/auth/status');
+    const response = await fetch(`${FLASK_API_URL}/auth/status`, {
+      credentials: 'include', // Send cookies for cross-origin requests
+    });
     return response.json();
   }
 
