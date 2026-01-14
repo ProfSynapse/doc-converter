@@ -105,6 +105,9 @@ def create_app(config_name='default'):
         @app.route('/oauth_complete')
         def oauth_complete():
             """Redirect to frontend after successful OAuth"""
+            app.logger.info(f'[OAuth Debug] OAuth complete, redirecting to frontend: {frontend_url}')
+            from flask_dance.contrib.google import google
+            app.logger.info(f'[OAuth Debug] google.authorized = {google.authorized}')
             return redirect(frontend_url)
 
         app.logger.info(f'Google OAuth blueprint registered at /login')

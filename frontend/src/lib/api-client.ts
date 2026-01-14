@@ -24,11 +24,46 @@ export interface ValidationResult {
 const ALLOWED_EXTENSIONS = ['.md', '.markdown', '.txt', '.html', '.htm'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-// Backend URL - use environment variable or default to localhost
-// In production, set NEXT_PUBLIC_FLASK_API_URL to your Flask backend URL
-const FLASK_API_URL = typeof window !== 'undefined'
-  ? (process.env.NEXT_PUBLIC_FLASK_API_URL || '')
-  : '';
+// Backend URL - fetched at runtime from config endpoint
+let FLASK_API_URL = '';
+let configLoaded = false;
+let configPromise: Promise<void> | null = null;
+
+// Fetch config from server (runtime environment variables)
+async function loadConfig(): Promise<void> {
+  if (configLoaded) return;
+  if (configPromise) return configPromise;
+
+  configPromise = (async () => {
+    try {
+      console.log('[API Client] Fetching runtime config...');
+      const response = await fetch('/api/config');
+      const config = await response.json();
+      FLASK_API_URL = config.flaskApiUrl || '';
+      console.log('[API Client] FLASK_API_URL loaded:', FLASK_API_URL);
+      configLoaded = true;
+    } catch (error) {
+      console.error('[API Client] Failed to load config:', error);
+      // Fallback to build-time env var or empty string
+      FLASK_API_URL = process.env.NEXT_PUBLIC_FLASK_API_URL || '';
+      console.log('[API Client] Using fallback FLASK_API_URL:', FLASK_API_URL);
+      configLoaded = true;
+    }
+  })();
+
+  return configPromise;
+}
+
+// Initialize config on module load (client-side only)
+if (typeof window !== 'undefined') {
+  loadConfig();
+}
+
+// Get the Flask API URL (ensures config is loaded)
+export async function getFlaskApiUrl(): Promise<string> {
+  await loadConfig();
+  return FLASK_API_URL;
+}
 
 export class MarkdownConverterAPI {
   /**
@@ -120,10 +155,14 @@ export class MarkdownConverterAPI {
         reject({ error: 'Request timed out' });
       });
 
-      xhr.open('POST', `${FLASK_API_URL}/api/convert`);
-      xhr.withCredentials = true; // Send cookies for cross-origin requests
-      xhr.timeout = 300000; // 5 minute timeout
-      xhr.send(formData);
+      // Ensure config is loaded before making request
+      loadConfig().then(() => {
+        console.log('[Convert Debug] Using FLASK_API_URL:', FLASK_API_URL);
+        xhr.open('POST', `${FLASK_API_URL}/api/convert`);
+        xhr.withCredentials = true; // Send cookies for cross-origin requests
+        xhr.timeout = 300000; // 5 minute timeout
+        xhr.send(formData);
+      });
     });
   }
 
@@ -135,6 +174,8 @@ export class MarkdownConverterAPI {
     format: string,
     filename: string
   ): Promise<void> {
+    await loadConfig();
+    console.log('[Download Debug] Using FLASK_API_URL:', FLASK_API_URL);
     const response = await fetch(`${FLASK_API_URL}/api/download/${jobId}/${format}`, {
       credentials: 'include', // Send cookies for cross-origin requests
     });
@@ -160,10 +201,22 @@ export class MarkdownConverterAPI {
    * Check authentication status
    */
   async checkAuthStatus(): Promise<AuthStatus> {
-    const response = await fetch(`${FLASK_API_URL}/auth/status`, {
-      credentials: 'include', // Send cookies for cross-origin requests
-    });
-    return response.json();
+    await loadConfig();
+    const url = `${FLASK_API_URL}/auth/status`;
+    console.log('[Auth Debug] Checking auth status at:', url);
+    console.log('[Auth Debug] FLASK_API_URL:', FLASK_API_URL);
+    try {
+      const response = await fetch(url, {
+        credentials: 'include', // Send cookies for cross-origin requests
+      });
+      console.log('[Auth Debug] Response status:', response.status);
+      const data = await response.json();
+      console.log('[Auth Debug] Auth data:', data);
+      return data;
+    } catch (error) {
+      console.error('[Auth Debug] Auth check failed:', error);
+      return { authenticated: false };
+    }
   }
 
   /**

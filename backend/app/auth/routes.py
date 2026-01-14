@@ -51,6 +51,11 @@ def status():
         ... .then(res => res.json())
         ... .then(data => console.log(data.authenticated))
     """
+    from flask import request, current_app
+    current_app.logger.info(f'[Auth Debug] /auth/status called')
+    current_app.logger.info(f'[Auth Debug] Request origin: {request.headers.get("Origin", "none")}')
+    current_app.logger.info(f'[Auth Debug] Request cookies: {list(request.cookies.keys())}')
+    current_app.logger.info(f'[Auth Debug] google.authorized = {google.authorized}')
     if google.authorized:
         try:
             # Fetch user info from Google
@@ -110,6 +115,22 @@ def logout():
 
     logger.info("User signed out")
     return redirect('/')
+
+
+@auth_bp.route('/debug')
+def debug_oauth():
+    """
+    Debug endpoint to check OAuth configuration (remove in production).
+    """
+    from flask import current_app
+    return jsonify({
+        'oauth_configured': bool(current_app.config.get('GOOGLE_OAUTH_CLIENT_ID')),
+        'client_id_prefix': current_app.config.get('GOOGLE_OAUTH_CLIENT_ID', '')[:20] + '...' if current_app.config.get('GOOGLE_OAUTH_CLIENT_ID') else None,
+        'frontend_url': current_app.config.get('FRONTEND_URL'),
+        'session_cookie_samesite': current_app.config.get('SESSION_COOKIE_SAMESITE'),
+        'session_cookie_secure': current_app.config.get('SESSION_COOKIE_SECURE'),
+        'google_authorized': google.authorized,
+    }), 200
 
 
 @auth_bp.route('/profile')

@@ -8,7 +8,7 @@ import { ResultsScreen } from './results-screen';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { X } from 'lucide-react';
-import { api, ConversionResult, AuthStatus } from '@/lib/api-client';
+import { api, ConversionResult, AuthStatus, getFlaskApiUrl } from '@/lib/api-client';
 
 type ScreenState = 'upload' | 'converting' | 'results';
 
@@ -117,7 +117,9 @@ export function ConverterFlow() {
   const handleAuthRequired = async () => {
     await saveStateBeforeOAuth();
     // Redirect directly to Flask backend for OAuth
-    const flaskUrl = process.env.NEXT_PUBLIC_FLASK_API_URL || '';
+    const flaskUrl = await getFlaskApiUrl();
+    console.log('[OAuth Debug] Flask API URL from config:', flaskUrl);
+    console.log('[OAuth Debug] Redirecting to:', `${flaskUrl}/login/google`);
     window.location.href = `${flaskUrl}/login/google`;
   };
 
@@ -174,7 +176,7 @@ export function ConverterFlow() {
         setError('Google Docs conversion requires authentication. Please sign in.');
         if (confirm('Sign in with Google now?')) {
           await saveStateBeforeOAuth();
-          const flaskUrl = process.env.NEXT_PUBLIC_FLASK_API_URL || '';
+          const flaskUrl = await getFlaskApiUrl();
           window.location.href = error.authUrl || `${flaskUrl}/login/google`;
         }
       } else {
