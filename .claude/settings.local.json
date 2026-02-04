@@ -48,7 +48,8 @@
       "Bash(git revert:*)",
       "Bash(npm run build:*)",
       "Bash(npx next:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(md5:*)"
     ],
     "deny": [],
     "ask": []
