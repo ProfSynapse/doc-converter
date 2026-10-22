@@ -17,6 +17,7 @@ import frontmatter
 import pypandoc
 import markdown
 import logging
+from app.utils.render_resources import InlineRasterFetcher
 from pathlib import Path
 from typing import Dict, Tuple, Optional
 
@@ -470,7 +471,7 @@ class MarkdownConverter:
             """
 
             # Generate PDF with WeasyPrint
-            HTML(string=html_document).write_pdf(output_path)
+            HTML(string=html_document, url_fetcher=InlineRasterFetcher()).write_pdf(output_path)
 
             file_size = Path(output_path).stat().st_size
             logger.info(f'Successfully created PDF: {output_path} ({file_size} bytes)')

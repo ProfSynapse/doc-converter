@@ -192,7 +192,7 @@ class HtmlConverter:
         """
         Convert HTML to PDF with page numbers.
 
-        Uses WeasyPrint which automatically fetches images from URLs.
+        Uses Chromium with scripts disabled and all network requests blocked.
 
         Args:
             html_content: HTML content string
@@ -244,7 +244,12 @@ class HtmlConverter:
             # Playwright uses real Chrome rendering engine for perfect CSS support
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
+                # Untrusted documents must not execute scripts or contact the network.
+                # Inline raster data URLs still render; remote CSS/fonts/images
+                # are intentionally unavailable in PDF output.
+                context = browser.new_context(java_script_enabled=False, service_workers="block")
+                context.route("**/*", lambda route: route.abort())
+                page = context.new_page()
                 page.set_content(html_content, wait_until='networkidle')
 
                 # Generate PDF with professional settings

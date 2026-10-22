@@ -11,7 +11,7 @@
 # ============================================
 # Stage 1: Base image with system dependencies
 # ============================================
-FROM python:3.12-slim as base
+FROM python:3.12.15-slim-bookworm@sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70 AS base
 
 ENV PYTHONUNBUFFERED=1
 
@@ -49,15 +49,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ============================================
 # Stage 2: Build dependencies
 # ============================================
-FROM base as builder
+FROM base AS builder
 
 WORKDIR /build
 
 # Copy requirements first for layer caching
-COPY requirements.txt .
+COPY requirements.txt requirements.lock ./
 
 # Install Python dependencies to /install prefix
-RUN pip install --prefix=/install --no-warn-script-location -r requirements.txt
+RUN pip install --prefix=/install --no-warn-script-location --require-hashes -r requirements.lock
 
 # Install Playwright browsers (Chromium only)
 # Set PYTHONPATH so Python can find playwright module installed to /install prefix
