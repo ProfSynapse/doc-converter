@@ -1,22 +1,24 @@
 # Next.js Frontend Dockerfile
-FROM node:20-alpine AS base
+FROM node:24.22.1-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+ENV NODE_OPTIONS=--max-old-space-size=1536
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN corepack enable && pnpm build
 
 # Production image, copy all the files and run next
 FROM base AS runner

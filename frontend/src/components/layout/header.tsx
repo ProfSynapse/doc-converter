@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Home, Linkedin, Youtube, Calendar, Mail, Github } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { api, AuthStatus } from '@/lib/api-client';
 
 export function Header() {
@@ -22,10 +21,6 @@ export function Header() {
     };
     checkAuth();
   }, []);
-
-  const handleSignIn = () => {
-    window.location.href = '/login/google';
-  };
 
   return (
     <header className="border-b border-gray-200 bg-white">

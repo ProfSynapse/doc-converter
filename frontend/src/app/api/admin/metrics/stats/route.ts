@@ -8,7 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(
 
 const FLASK_API_URL = process.env.FLASK_API_URL || 'http://localhost:8080';
 
-async function verifyAuth(request: NextRequest): Promise<boolean> {
+async function verifyAuth(): Promise<boolean> {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_token');
 
@@ -23,7 +23,7 @@ async function verifyAuth(request: NextRequest): Promise<boolean> {
 }
 
 export async function GET(request: NextRequest) {
-  const isAuthenticated = await verifyAuth(request);
+  const isAuthenticated = await verifyAuth();
 
   if (!isAuthenticated) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

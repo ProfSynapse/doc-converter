@@ -11,6 +11,17 @@ import os
 from pathlib import Path
 
 
+def database_uri(raw_uri):
+    """Keep unqualified PostgreSQL URLs on the installed psycopg2 driver.
+
+    SQLAlchemy 2.1 defaults to psycopg 3, which this application's locked
+    runtime does not install. Preserve explicitly selected drivers and SQLite.
+    """
+    if raw_uri.startswith(('postgresql://', 'postgres://')):
+        return 'postgresql+psycopg2://' + raw_uri.split('://', 1)[1]
+    return raw_uri
+
+
 class Config:
     """Base configuration class"""
 
@@ -60,7 +71,7 @@ class Config:
     FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
     # Database configuration
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
+    SQLALCHEMY_DATABASE_URI = database_uri(os.environ.get('DATABASE_URL', 'sqlite:///app.db'))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,  # Verify connections before using them

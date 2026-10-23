@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -88,17 +89,12 @@ export default function AdminDashboardPage() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('7d');
   const router = useRouter();
 
-  const fetchData = async (period: TimePeriod = timePeriod) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const [statsRes, conversionsRes, pageViewsRes] = await Promise.all([
-        fetch(`/api/admin/metrics/stats?period=${period}`),
-        fetch(`/api/admin/metrics/conversions?period=${period}`),
-        fetch(`/api/admin/metrics/page-views?period=${period}`),
-      ]);
-
+  const fetchData = useCallback((period: TimePeriod) => {
+    return Promise.all([
+      fetch(`/api/admin/metrics/stats?period=${period}`),
+      fetch(`/api/admin/metrics/conversions?period=${period}`),
+      fetch(`/api/admin/metrics/page-views?period=${period}`),
+    ]).then(async ([statsRes, conversionsRes, pageViewsRes]) => {
       if (!statsRes.ok || !conversionsRes.ok || !pageViewsRes.ok) {
         if (statsRes.status === 401) {
           router.push('/admin/login');
@@ -116,21 +112,28 @@ export default function AdminDashboardPage() {
       setStats(statsData);
       setRecentConversions(conversionsData.conversions || []);
       setRecentPageViews(pageViewsData.pageViews || []);
-    } catch (err) {
+    }).catch((err) => {
       console.error('Dashboard error:', err);
       setError('Failed to load dashboard data');
-    } finally {
+    }).finally(() => {
       setIsLoading(false);
-    }
-  };
+    });
+  }, [router]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // Initial loading/error state is already set by useState.
+    void fetchData('7d');
+  }, [fetchData]);
+
+  const refreshData = (period: TimePeriod) => {
+    setIsLoading(true);
+    setError(null);
+    void fetchData(period);
+  };
 
   const handleTimePeriodChange = (period: TimePeriod) => {
     setTimePeriod(period);
-    fetchData(period);
+    refreshData(period);
   };
 
   const handleLogout = async () => {
@@ -178,7 +181,7 @@ export default function AdminDashboardPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fetchData()}
+                onClick={() => refreshData(timePeriod)}
                 className="flex items-center"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -490,12 +493,12 @@ export default function AdminDashboardPage() {
 
         {/* Back Link */}
         <div className="mt-8 text-center">
-          <a
+          <Link
             href="/"
             className="text-sm text-[#00A99D] hover:text-[#00A99D]/80 transition-colors"
           >
             ← Back to Converter
-          </a>
+          </Link>
         </div>
       </main>
     </div>
