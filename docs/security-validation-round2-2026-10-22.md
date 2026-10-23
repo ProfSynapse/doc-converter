@@ -135,3 +135,22 @@ BC Connect still requires Joseph's coordination with its client/site owner. Fron
 and BC code/checks were unchanged in this round. Deployments and verification of
 actual deployed versions/image digests remain owner-authorized work. Keep the
 existing Nexus remediation task in_progress.
+
+
+## Authorized rollout follow-up — 2026-10-23
+
+Staging caught a PostgreSQL driver compatibility failure before production release:
+SQLAlchemy 2.1 selects psycopg 3 for an unqualified PostgreSQL URI, while the
+72-package runtime lock contains psycopg2-binary. Explicitly select psycopg2 for
+unqualified `postgresql://` and legacy `postgres://` URLs. Explicit driver choices
+and SQLite remain intact. The new driver tests instantiate the real SQLAlchemy
+engine and load the installed DBAPI without connecting to a database.
+
+Private production and staging database dumps were restored successfully into
+an isolated PostgreSQL 17 container before staging deployment. Production is at
+migration head `7876525c546e`; staging initially had no public tables. Migration
+files are unchanged. Startup retains its existing `flask db upgrade` behavior;
+on production this should be a no-op, and staging applies the existing initial
+migration. No credentials, database contents or private backup payloads are stored
+in this repository. Deployment/runtime/health receipts belong to the rollout
+handoff under `rollout-20261023/older/` in the parent scratch directory.
