@@ -39,21 +39,26 @@ that setting. The reproduction command below omits the unused argument.
 
 ## Real browser and compatibility results
 
-The final 17-test container run is queued on the shared heavy-work lock. Do not
-represent it as passed yet. The previous actual-image run passed all 15 original
-checks and the forced-error lifecycle test (16 passed), but its content test used
-an overstrict total image-object count. The final test now asserts the supported
-inline PNG's decoded pixels while retaining text/table/Unicode, script/file
-sentinel, zero fixture-server-request and browser-process cleanup checks.
-The current final command/result is tracked in the Nexus round 2 checkpoint and
-`older-apps-r2-backend-container-tests.log`; owner rollout gates remain open.
+**Final local gate is resource-blocked.** The corrected 17-test container run
+waited 1,200 seconds for the shared heavy-work lock, then exited 1 without starting
+Docker or collecting tests. The log is empty; no green final result or PDF sample
+is claimed. The lock was still held by an active team Python workload; that process
+was not altered. The previous actual-image run passed all 15 original checks and
+the forced-error lifecycle test (**16 passed**), but its content test failed an
+overstrict total image-object count (**1 failed**, 4.16s). The final test asserts
+the inline PNG's decoded pixels while retaining text/table/Unicode, script/file
+sentinel, zero fixture-server-request and browser-process cleanup checks. That
+corrected assertion set still requires execution after the shared resource is free.
+`older-apps-r2-backend-lock-blocker.json` records the exact wait result and rerun.
+No additional authorization is required for this already-authorized local test.
+Keep the task in_progress and do not treat the converter as fully validated.
 
 The PDF error-injection test initially showed the real Browser object remained
 connected after a PDF write failure. The converter now closes the browser in a
 `finally` block, releasing its contexts on failure as well as success. This is a
 separate backend behavior/resource-lifecycle correction, not a policy expansion.
-The regression tests launch actual Chromium and inspect remaining Chromium process
-IDs, in addition to checking browser disconnection. Only the PDF write failure is
+The lifecycle regression launched actual Chromium and checked remaining process
+IDs as well as browser disconnection; it passed against the rebuilt final image. Only the PDF write failure is
 injected; the browser/document rendering are real.
 
 The first harness mount omitted pytest's py.py shim and failed before collection;
@@ -75,7 +80,11 @@ Evidence directory on professor-synapse:
 `/home/profsynapse/.t3/scratch/2026-10-22-there-s-recently-been-a-17c15cd7`.
 It contains `older-apps-r2-commands.sh`, `older-apps-r2-run-backend-tests.sh`,
 `older-apps-r2-run-frontend-tests.sh`, full Docker build/test logs, exact image
-inspection JSON and `older-apps-r2-pdf-artifacts/chromium-policy.pdf`.
+inspection JSON and the resource-blocker receipt. The prepared
+`older-apps-r2-pdf-artifacts/` directory is empty: the pending test will write
+`chromium-policy.pdf` and `chromium-policy.json` there after rendering. Earlier
+assertion failures occurred before the sample-copy step; their temporary PDFs
+were not retained. Do not represent those files as existing artifacts.
 Test-only pytest 9.1.1/pypdf 6.21.2/pluggy 1.7.0/iniconfig 2.3.1 modules are mounted
 read-only from the original isolated test environment (including pytest's py.py).
 The production interpreter and 72 runtime packages come from the final image.

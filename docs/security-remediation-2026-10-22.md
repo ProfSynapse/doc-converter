@@ -29,7 +29,8 @@ match the audit, but this change must be built and tested for both environments.
 Remote images, stylesheets and fonts no longer load into PDFs. Inline CSS, text,
 tables and supported inline raster images remain available. Hyperlinks in the
 output are retained. This intentional compatibility change requires owner review.
-Round 2 built both final Docker images and added real Chromium checks; see
+Round 2 built both final Docker images and added real Chromium checks. The final
+corrected content test is blocked by a timed-out shared-lock wait; see
 [round 2 validation](security-validation-round2-2026-10-22.md) for exact outcomes.
 The PDF policy is not an operating system egress sandbox or a complete limit on
 CPU/memory use from hostile documents.
