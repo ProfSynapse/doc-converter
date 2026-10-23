@@ -15,7 +15,6 @@ interface ResultsScreenProps {
 
 export function ResultsScreen({
   result,
-  originalFileName,
   onDownload,
   onConvertAnother,
   isDownloading,

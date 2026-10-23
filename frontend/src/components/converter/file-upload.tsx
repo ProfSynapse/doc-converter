@@ -26,6 +26,15 @@ export function FileUpload({ onFileSelect, selectedFile, onError }: FileUploadPr
     setIsDragging(false);
   }, []);
 
+  const handleFile = useCallback((file: File) => {
+    const validation = api.validateFile(file);
+    if (!validation.valid) {
+      onError(validation.error || 'Invalid file');
+      return;
+    }
+    onFileSelect(file);
+  }, [onFileSelect, onError]);
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -37,17 +46,8 @@ export function FileUpload({ onFileSelect, selectedFile, onError }: FileUploadPr
         handleFile(files[0]);
       }
     },
-    [onFileSelect, onError]
+    [handleFile]
   );
-
-  const handleFile = (file: File) => {
-    const validation = api.validateFile(file);
-    if (!validation.valid) {
-      onError(validation.error || 'Invalid file');
-      return;
-    }
-    onFileSelect(file);
-  };
 
   const handleClick = () => {
     const input = document.createElement('input');

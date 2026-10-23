@@ -8,7 +8,7 @@ import { ResultsScreen } from './results-screen';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { X } from 'lucide-react';
-import { api, ConversionResult, AuthStatus, getFlaskApiUrl } from '@/lib/api-client';
+import { api, ConversionResult, getFlaskApiUrl } from '@/lib/api-client';
 
 type ScreenState = 'upload' | 'converting' | 'results';
 
@@ -22,7 +22,6 @@ export function ConverterFlow() {
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<AuthStatus['user'] | null>(null);
 
   // Conversion state
   const [progress, setProgress] = useState(0);
@@ -36,11 +35,39 @@ export function ConverterFlow() {
 
   // Check auth status on mount
   useEffect(() => {
+    // Restore state after OAuth redirect
+    const restoreStateAfterOAuth = () => {
+      const savedState = sessionStorage.getItem('mdconverter_oauth_state');
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+          const ageMs = Date.now() - state.timestamp;
+
+          if (ageMs < 5 * 60 * 1000 && state.fileContent) {
+            fetch(state.fileContent)
+              .then((res) => res.blob())
+              .then((blob) => {
+                const file = new File([blob], state.fileName, {
+                  type: state.fileType || 'text/markdown',
+                });
+                setSelectedFile(file);
+                setSelectedFormats(state.selectedFormats || []);
+                setError('File restored! Ready to convert.');
+                setTimeout(() => setError(null), 5000);
+              })
+              .catch((err) => console.error('Failed to restore file:', err));
+          }
+        } catch (err) {
+          console.error('Failed to restore state:', err);
+        }
+        sessionStorage.removeItem('mdconverter_oauth_state');
+      }
+    };
+
     const checkAuth = async () => {
       try {
         const status = await api.checkAuthStatus();
         setIsAuthenticated(status.authenticated);
-        setUser(status.user || null);
 
         // Restore state after OAuth redirect
         if (status.authenticated) {
@@ -79,40 +106,6 @@ export function ConverterFlow() {
     }
   }, [selectedFile, selectedFormats]);
 
-  // Restore state after OAuth redirect
-  const restoreStateAfterOAuth = () => {
-    const savedState = sessionStorage.getItem('mdconverter_oauth_state');
-    if (savedState) {
-      try {
-        const state = JSON.parse(savedState);
-        const ageMs = Date.now() - state.timestamp;
-
-        if (ageMs < 5 * 60 * 1000 && state.fileContent) {
-          fetch(state.fileContent)
-            .then((res) => res.blob())
-            .then((blob) => {
-              const file = new File([blob], state.fileName, {
-                type: state.fileType || 'text/markdown',
-              });
-              setSelectedFile(file);
-              setSelectedFormats(state.selectedFormats || []);
-              showMessage('File restored! Ready to convert.');
-            })
-            .catch((err) => console.error('Failed to restore file:', err));
-        }
-      } catch (err) {
-        console.error('Failed to restore state:', err);
-      }
-      sessionStorage.removeItem('mdconverter_oauth_state');
-    }
-  };
-
-  // Show temporary message
-  const showMessage = (message: string) => {
-    setError(message);
-    setTimeout(() => setError(null), 5000);
-  };
-
   // Handle auth required
   const handleAuthRequired = async () => {
     await saveStateBeforeOAuth();
@@ -120,7 +113,7 @@ export function ConverterFlow() {
     const flaskUrl = await getFlaskApiUrl();
     console.log('[OAuth Debug] Flask API URL from config:', flaskUrl);
     console.log('[OAuth Debug] Redirecting to:', `${flaskUrl}/login/google`);
-    window.location.href = `${flaskUrl}/login/google`;
+    window.location.assign(new URL(`${flaskUrl}/login/google`, window.location.origin).href);
   };
 
   // Handle format toggle
@@ -139,7 +132,7 @@ export function ConverterFlow() {
   };
 
   // Handle conversion
-  const handleConvert = async () => {
+  const handleConvert = useCallback(async () => {
     if (!selectedFile || selectedFormats.length === 0 || isProcessing) return;
 
     try {
@@ -187,7 +180,7 @@ export function ConverterFlow() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [selectedFile, selectedFormats, isProcessing, saveStateBeforeOAuth]);
 
   // Handle download
   const handleDownload = async (format: 'docx' | 'pdf') => {
@@ -207,14 +200,14 @@ export function ConverterFlow() {
   };
 
   // Handle convert another
-  const handleConvertAnother = () => {
+  const handleConvertAnother = useCallback(() => {
     setSelectedFile(null);
     setSelectedFormats([]);
     setConversionResult(null);
     setProgress(0);
     setError(null);
     setCurrentScreen('upload');
-  };
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -241,7 +234,7 @@ export function ConverterFlow() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [currentScreen, selectedFile, selectedFormats, isProcessing]);
+  }, [currentScreen, selectedFile, selectedFormats, isProcessing, handleConvert, handleConvertAnother]);
 
   const canConvert = selectedFile && selectedFormats.length > 0 && !isProcessing;
 
