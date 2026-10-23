@@ -39,19 +39,25 @@ that setting. The reproduction command below omits the unused argument.
 
 ## Real browser and compatibility results
 
-**Final local gate is resource-blocked.** The corrected 17-test container run
-waited 1,200 seconds for the shared heavy-work lock, then exited 1 without starting
-Docker or collecting tests. The log is empty; no green final result or PDF sample
-is claimed. The lock was still held by an active team Python workload; that process
-was not altered. The previous actual-image run passed all 15 original checks and
-the forced-error lifecycle test (**16 passed**), but its content test failed an
-overstrict total image-object count (**1 failed**, 4.16s). The final test asserts
-the inline PNG's decoded pixels while retaining text/table/Unicode, script/file
-sentinel, zero fixture-server-request and browser-process cleanup checks. That
-corrected assertion set still requires execution after the shared resource is free.
-`older-apps-r2-backend-lock-blocker.json` records the exact wait result and rerun.
-No additional authorization is required for this already-authorized local test.
-Keep the task in_progress and do not treat the converter as fully validated.
+**Final local backend validation passed: 17 tests, 3 warnings, 5.74 seconds.**
+The parent reran `older-apps-r2-run-backend-tests.sh` against the reviewed final
+backend image with `--network none`, a 1536 MiB memory cap and two CPUs. After
+observing about 6 GiB available memory, the parent admitted this short smoke test
+outside the long-build lock, without interrupting another agent or starting a
+concurrent build. Both final image IDs still matched the recorded evidence.
+
+The earlier 1,200-second lock timeout and the preceding **16 passed / 1 failed**
+image-count assertion remain retained as historical receipts. The corrected
+test now passes text/table/Unicode, script/file sentinel, zero fixture-server
+requests, decoded inline PNG pixels, and browser-process cleanup checks. It
+retains `older-apps-r2-pdf-artifacts/chromium-policy.pdf` and its JSON receipt;
+the JSON records no fixture HTTP hits and the expected 10x10 red image.
+
+Parent evidence is `delegation/older-apps-parent-final-backend-tests.log` and
+`delegation/older-apps-parent-final-validation.json` in the scratch directory.
+This closes the pending local backend test gate. Owner behavior approval, live
+staging OAuth/client tests and rollout remain pending; the remediation task stays
+in_progress. These tests do not establish universal conversion isolation.
 
 The PDF error-injection test initially showed the real Browser object remained
 connected after a PDF write failure. The converter now closes the browser in a
@@ -81,10 +87,10 @@ Evidence directory on professor-synapse:
 It contains `older-apps-r2-commands.sh`, `older-apps-r2-run-backend-tests.sh`,
 `older-apps-r2-run-frontend-tests.sh`, full Docker build/test logs, exact image
 inspection JSON and the resource-blocker receipt. The prepared
-`older-apps-r2-pdf-artifacts/` directory is empty: the pending test will write
-`chromium-policy.pdf` and `chromium-policy.json` there after rendering. Earlier
-assertion failures occurred before the sample-copy step; their temporary PDFs
-were not retained. Do not represent those files as existing artifacts.
+`older-apps-r2-pdf-artifacts/` directory now contains the real
+`chromium-policy.pdf` and `chromium-policy.json` from the passing parent run.
+Earlier assertion failures occurred before the sample-copy step; their temporary
+PDFs were not retained. The parent verification JSON hashes the retained PDF.
 Test-only pytest 9.1.1/pypdf 6.21.2/pluggy 1.7.0/iniconfig 2.3.1 modules are mounted
 read-only from the original isolated test environment (including pytest's py.py).
 The production interpreter and 72 runtime packages come from the final image.
