@@ -12,6 +12,8 @@ RUN corepack enable && pnpm install --frozen-lockfile
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+ENV NODE_OPTIONS=--max-old-space-size=1536
+ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 

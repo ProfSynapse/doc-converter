@@ -244,27 +244,30 @@ class HtmlConverter:
             # Playwright uses real Chrome rendering engine for perfect CSS support
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
-                # Untrusted documents must not execute scripts or contact the network.
-                # Inline raster data URLs still render; remote CSS/fonts/images
-                # are intentionally unavailable in PDF output.
-                context = browser.new_context(java_script_enabled=False, service_workers="block")
-                context.route("**/*", lambda route: route.abort())
-                page = context.new_page()
-                page.set_content(html_content, wait_until='networkidle')
+                try:
+                    # Untrusted documents must not execute scripts or contact the network.
+                    # Inline raster data URLs still render; remote CSS/fonts/images
+                    # are intentionally unavailable in PDF output.
+                    context = browser.new_context(java_script_enabled=False, service_workers="block")
+                    context.route("**/*", lambda route: route.abort())
+                    page = context.new_page()
+                    page.set_content(html_content, wait_until='networkidle')
 
-                # Generate PDF with professional settings
-                page.pdf(
-                    path=output_path,
-                    format='A4',
-                    print_background=True,  # Essential for gradients and background colors
-                    margin={
-                        'top': '0.75in',
-                        'right': '0.75in',
-                        'bottom': '0.75in',
-                        'left': '0.75in'
-                    }
-                )
-                browser.close()
+                    # Generate PDF with professional settings
+                    page.pdf(
+                        path=output_path,
+                        format='A4',
+                        print_background=True,  # Essential for gradients and background colors
+                        margin={
+                            'top': '0.75in',
+                            'right': '0.75in',
+                            'bottom': '0.75in',
+                            'left': '0.75in'
+                        }
+                    )
+                finally:
+                    # Release the browser and its contexts even when rendering fails.
+                    browser.close()
 
             file_size = Path(output_path).stat().st_size
             logger.info(f'Successfully created PDF: {output_path} ({file_size} bytes)')

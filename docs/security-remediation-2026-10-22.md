@@ -29,13 +29,14 @@ match the audit, but this change must be built and tested for both environments.
 Remote images, stylesheets and fonts no longer load into PDFs. Inline CSS, text,
 tables and supported inline raster images remain available. Hyperlinks in the
 output are retained. This intentional compatibility change requires owner review.
-Chromium interception and JavaScript settings have mock coverage; real browser
-rendering and full Docker builds remain rollout gates. They are not an operating
-system egress sandbox or a complete limit on CPU/memory use from hostile documents.
+Round 2 built both final Docker images and added real Chromium checks; see
+[round 2 validation](security-validation-round2-2026-10-22.md) for exact outcomes.
+The PDF policy is not an operating system egress sandbox or a complete limit on
+CPU/memory use from hostile documents.
 
 The EPS advisory concerns untrusted images reaching Pillow/Ghostscript. The old
-Dockerfile did not explicitly install Ghostscript; the final installed image was
-not inspected, so production Ghostscript presence is unknown. No live exploit was
+Dockerfile did not explicitly install Ghostscript; production presence remains
+unobserved. Ghostscript is absent from the inspected local round 2 image. No live exploit was
 attempted. The patched WeasyPrint release and additional asset restrictions address
 that route without assuming Ghostscript is absent.
 
@@ -75,16 +76,20 @@ uv pip check --python .venv/bin/python
 The conversion tests render real PDF/DOCX fixtures, check inline assets/text/tables,
 exercise the Flask factory with dummy config and an in-memory SQLite URL, and mock
 Google Docs/Drive. No Google API calls, login, publication or live DB is involved.
-Frontend lint failures in unchanged source remain; do not bypass that gate for a PR.
+The updated lint configuration now passes without warnings or suppressions;
+[the compatibility review](lint-compatibility-2026-10-22.md) documents the focused
+fixes and four passing browser tests. Original lint behavior was not reproduced,
+so unchanged source is not evidence that the old dependency set reported the same findings.
 
 ## Owner rollout gates
 
 1. Review the PDF asset behavior and Google/Pandoc risk before enabling untrusted
-   workloads. Resolve the frontend lint gate before a draft PR or merge.
-2. Build both final Dockerfiles from this reviewed commit in isolation. Smoke-test
-   Chromium PDFs and representative styled customer documents; compare pagination,
-   tables, fonts and Unicode against expected output. Validate the installed lock,
-   browser/runtime versions, Ghostscript presence and final image digests.
+   workloads. The frontend lint gate is now resolved; policy/behavior approval remains.
+2. Review the built-image and Chromium fixture receipts in the round 2 document.
+   Compare representative styled customer PDFs for pagination, tables, fonts and
+   Unicode. Final deployed images must be rebuilt/promoted and their runtime
+   versions/digests verified after separate deployment authorization. The local
+   images do not prove a deployed environment changed.
 3. Exercise OAuth login/refresh and Google export with a test account in staging;
    review CORS origin configuration, session-cookie behavior and private sharing.
 4. After separate owner authorization, deploy reviewed immutable artifacts to
